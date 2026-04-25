@@ -73,6 +73,7 @@ export function StatGrid({
                 now={now}
                 timeScale={timeScale}
                 isHighlighted={highlightedStatisticId === statistic.id}
+                showCategory={true} // ← SHOW category here since cards are mixed
                 onOpen={onOpenStatistic}
               />
             ))}
@@ -107,6 +108,7 @@ export function StatGrid({
                   now={now}
                   timeScale={timeScale}
                   isHighlighted={highlightedStatisticId === statistic.id}
+                  showCategory={false} // ← HIDE category here, section header already says it
                   onOpen={onOpenStatistic}
                 />
               ))}

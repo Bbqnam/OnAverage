@@ -3,7 +3,7 @@ import { categories } from "../data/categories";
 import { calculateSincePageLoad } from "../lib/calculations";
 import { countFuzzyEstimates } from "../lib/filtering";
 import { formatLargeNumber } from "../lib/formatting";
-import type { CountryDataset, Statistic } from "../types/statistic";
+import type { CountryDataset } from "../types/statistic";
 
 interface MetricSummaryCardsProps {
   dataset: CountryDataset;
@@ -23,11 +23,8 @@ export function MetricSummaryCards({
     0,
   );
   const fuzzyCount = countFuzzyEstimates(dataset.statistics);
-  const liveCount = dataset.statistics.filter((statistic) => statistic.dataMode !== "estimated")
-    .length;
-  const highConfidenceCount = dataset.statistics.filter(
-    (statistic) => statistic.confidence === "high",
-  ).length;
+  const liveCount = dataset.statistics.filter((s) => s.dataMode !== "estimated").length;
+  const highConfidenceCount = dataset.statistics.filter((s) => s.confidence === "high").length;
 
   const cards = [
     {
@@ -69,24 +66,23 @@ export function MetricSummaryCards({
   ];
 
   return (
-    <section className="grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+    <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
       {cards.map((card) => {
         const Icon = card.icon;
-
         return (
           <article
             key={card.label}
-            className="flex min-h-[78px] min-w-0 items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-card-foreground shadow-subtle"
+            className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-2 text-card-foreground shadow-subtle"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
-              <Icon className="h-4 w-4" aria-hidden="true" />
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
+              <Icon className="h-3.5 w-3.5" aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <p className="truncate text-xs font-medium text-muted-foreground">{card.label}</p>
-              <p className="mt-0.5 truncate text-xl font-semibold tracking-normal">
+              <p className="truncate text-[10px] font-medium text-muted-foreground">{card.label}</p>
+              <p className="truncate text-base font-semibold leading-tight tracking-normal">
                 {card.value}
               </p>
-              <p className="truncate text-[11px] text-muted-foreground">{card.detail}</p>
+              <p className="truncate text-[10px] text-muted-foreground">{card.detail}</p>
             </div>
           </article>
         );

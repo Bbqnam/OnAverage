@@ -1,7 +1,6 @@
-import { ArrowUpRight } from "lucide-react";
-import { ConfidenceBadge } from "./ConfidenceBadge";
-import { DataModeBadge } from "./DataModeBadge";
 import { StatIcon } from "./StatIcon";
+import { DataModeBadge } from "./DataModeBadge";
+import { ConfidenceBadge } from "./ConfidenceBadge";
 import { calculateSincePageLoad, getRateForScale } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { formatLargeNumber, formatRate } from "../lib/formatting";
@@ -29,45 +28,54 @@ export function FeaturedStatCard({
   const selectedRate = getRateForScale(statistic.yearlyEstimate, timeScale);
 
   return (
-    <section className="relative overflow-hidden rounded-lg border border-border bg-card p-3 text-card-foreground shadow-subtle sm:p-4">
-      <div className={`absolute inset-x-0 top-0 h-0.5 ${categoryStyle.line}`} />
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.05fr)_minmax(220px,0.65fr)_minmax(360px,1fr)] xl:items-center">
-        <div className="flex min-w-0 items-center gap-3">
+    <section
+      className={`relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-subtle ${categoryStyle.leftBorder}`}
+    >
+      <div className="grid gap-0 sm:grid-cols-[1fr_auto]">
+
+        {/* Left: identity + number */}
+        <button
+          type="button"
+          onClick={() => onOpen(statistic)}
+          className="flex min-w-0 items-center gap-3 px-3 py-2.5 text-left transition hover:bg-accent/30"
+        >
           <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
+            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
           >
-            <StatIcon name={statistic.icon} className="h-5 w-5" />
+            <StatIcon name={statistic.icon} className="h-4.5 w-4.5" />
           </div>
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-muted-foreground">Right now</p>
-            <h2 className="mt-0.5 truncate text-xl font-semibold tracking-normal">
+          <div className="min-w-0 flex-1">
+            <p className={`text-[10px] font-semibold uppercase tracking-widest ${categoryStyle.text}`}>
+              Right now
+            </p>
+            <h2 className="truncate text-base font-semibold leading-snug">
               {statistic.title}
             </h2>
-            <p className="mt-1 truncate text-sm text-muted-foreground">
+            <p className="truncate text-xs text-muted-foreground">
               {statistic.shortDescription}
             </p>
           </div>
-        </div>
-
-        <div className="min-w-0 xl:text-right">
-          <p className="count-pop truncate text-3xl font-semibold tracking-normal text-foreground/80">
-            {formatLargeNumber(sinceOpened, sinceOpened >= 100_000)}
-          </p>
-          <p className="mt-1 truncate text-sm text-muted-foreground">
-            {formatRate(selectedRate, statistic.unit, timeScale)}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2 xl:justify-end">
-            <ConfidenceBadge confidence={statistic.confidence} />
-            <DataModeBadge dataMode={statistic.dataMode} />
+          <div className="shrink-0 text-right">
+            <p className="text-2xl font-semibold tabular-nums text-foreground/90">
+              {formatLargeNumber(sinceOpened, sinceOpened >= 100_000)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {formatRate(selectedRate, statistic.unit, timeScale)}
+            </p>
+            <div className="mt-1 flex justify-end gap-1.5">
+              <ConfidenceBadge confidence={statistic.confidence} />
+              <DataModeBadge dataMode={statistic.dataMode} />
+            </div>
           </div>
-        </div>
+        </button>
 
+        {/* Right: supporting stats */}
         {supportingStatistics.length > 0 && (
-          <div className="grid min-w-0 gap-2 sm:grid-cols-2">
-            {supportingStatistics.map((supportingStatistic) => (
+          <div className="flex min-w-0 flex-col justify-center gap-1 border-l border-border px-3 py-2.5 sm:min-w-[220px]">
+            {supportingStatistics.map((s) => (
               <SupportingStatButton
-                key={supportingStatistic.id}
-                statistic={supportingStatistic}
+                key={s.id}
+                statistic={s}
                 openedAt={openedAt}
                 now={now}
                 onOpen={onOpen}
@@ -76,15 +84,6 @@ export function FeaturedStatCard({
           </div>
         )}
       </div>
-
-      <button
-        type="button"
-        onClick={() => onOpen(statistic)}
-        className="mt-3 inline-flex h-8 items-center gap-2 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground transition hover:bg-accent"
-      >
-        Open details
-        <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-      </button>
     </section>
   );
 }
@@ -96,12 +95,7 @@ interface SupportingStatButtonProps {
   onOpen: (statistic: Statistic) => void;
 }
 
-function SupportingStatButton({
-  statistic,
-  openedAt,
-  now,
-  onOpen,
-}: SupportingStatButtonProps) {
+function SupportingStatButton({ statistic, openedAt, now, onOpen }: SupportingStatButtonProps) {
   const categoryStyle = getCategoryStyle(statistic.category);
   const sinceOpened = calculateSincePageLoad(statistic.yearlyEstimate, openedAt, now);
 
@@ -109,19 +103,17 @@ function SupportingStatButton({
     <button
       type="button"
       onClick={() => onOpen(statistic)}
-      className={`flex min-w-0 items-center gap-2 rounded-md px-2 py-1.5 text-left transition hover:bg-accent ${categoryStyle.hover}`}
+      className={`flex min-w-0 items-center gap-2 rounded-md px-2 py-1 text-left transition hover:bg-accent`}
       aria-label={`Open ${statistic.title} details`}
     >
       <div
-        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
+        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
       >
-        <StatIcon name={statistic.icon} className="h-3.5 w-3.5" />
+        <StatIcon name={statistic.icon} className="h-3 w-3" />
       </div>
-      <div className="min-w-0">
-        <p className="truncate text-xs font-medium text-muted-foreground">
-          {statistic.shortTitle}
-        </p>
-        <p className="truncate text-sm font-semibold tracking-normal">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[10px] text-muted-foreground">{statistic.shortTitle}</p>
+        <p className="truncate text-sm font-semibold tabular-nums">
           {formatLargeNumber(sinceOpened, sinceOpened >= 100_000)}
         </p>
       </div>

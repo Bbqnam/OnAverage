@@ -1,9 +1,6 @@
-import { ArrowUpRight } from "lucide-react";
-import { ConfidenceBadge } from "./ConfidenceBadge";
-import { DataModeBadge } from "./DataModeBadge";
-import { StatIcon } from "./StatIcon";
 import { calculateSincePageLoad, getRateForScale } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
+import { StatIcon } from "./StatIcon";
 import { formatLargeNumber, formatRate } from "../lib/formatting";
 import type { Statistic, TimeScale } from "../types/statistic";
 
@@ -13,6 +10,7 @@ interface StatCardProps {
   now: number;
   timeScale: TimeScale;
   isHighlighted?: boolean;
+  showCategory?: boolean; // ← ADDED THIS LINE
   onOpen: (statistic: Statistic) => void;
 }
 
@@ -22,6 +20,7 @@ export function StatCard({
   now,
   timeScale,
   isHighlighted = false,
+  showCategory = true, // ← ADDED THIS LINE
   onOpen,
 }: StatCardProps) {
   const sinceOpened = calculateSincePageLoad(statistic.yearlyEstimate, openedAt, now);
@@ -30,101 +29,62 @@ export function StatCard({
 
   return (
     <article
-      className={`group relative overflow-hidden rounded-lg border bg-card p-3 text-card-foreground shadow-subtle transition duration-200 hover:-translate-y-0.5 ${categoryStyle.hover} ${categoryStyle.glow} ${
-        isHighlighted ? `${categoryStyle.border} ring-2 ring-primary/30` : "border-border"
+      onClick={() => onOpen(statistic)}
+      className={`group relative cursor-pointer overflow-hidden rounded-lg border-y border-r bg-card text-card-foreground transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${categoryStyle.leftBorder} ${
+        isHighlighted ? "ring-2 ring-primary/30" : ""
       }`}
     >
-      <div className={`absolute inset-x-0 top-0 z-10 h-0.5 ${categoryStyle.line}`} />
-      <CategoryMotionCue category={statistic.category} toneClass={categoryStyle.text} />
-      <div className="relative z-10 flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <div
-            className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
-          >
-            {statistic.category === "Life" && (
-              <span className="stat-life-pulse absolute inset-1 rounded-full bg-current" />
-            )}
-            <StatIcon name={statistic.icon} className="relative z-10 h-4 w-4" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold tracking-normal">{statistic.title}</h2>
-            <p className="mt-0.5 truncate text-xs text-muted-foreground">
-              {statistic.shortDescription}
-            </p>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={() => onOpen(statistic)}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
-          aria-label={`Open ${statistic.title} details`}
-          title={`Open ${statistic.title} details`}
+      {/* Header: icon + title side by side */}
+      <div className="flex items-start gap-3 px-3 pt-3">
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
         >
-          <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-        </button>
+          {(statistic.category === "Life" ||
+            statistic.category === "Events" ||
+            statistic.category === "Environment") && (
+            <span
+              className={`absolute h-9 w-9 rounded-full ${categoryStyle.dot} opacity-20 ${categoryStyle.pulse}`}
+            />
+          )}
+          <StatIcon name={statistic.icon} className="relative z-10 h-4 w-4" />
+        </div>
+
+        <div className="min-w-0 flex-1">
+          {/* ↓ THIS WHOLE BLOCK IS NEW — only shows category label when showCategory is true */}
+          {showCategory && (
+            <p
+              className={`text-[10px] font-semibold uppercase tracking-widest ${categoryStyle.text}`}
+            >
+              {statistic.category}
+            </p>
+          )}
+          {/* ↑ END OF NEW BLOCK */}
+
+          <h2 className="mt-0.5 text-sm font-semibold leading-snug text-foreground">
+            {statistic.title}
+          </h2>
+          <p className="mt-0.5 truncate text-xs text-muted-foreground">
+            {statistic.shortDescription}
+          </p>
+        </div>
       </div>
 
-      <div className="relative z-10 mt-4">
-        <p className="text-[11px] font-medium uppercase text-muted-foreground">
+      {/* Live counter */}
+      <div className="px-3 pt-3">
+        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           Since you opened
         </p>
-        <p className="count-pop mt-1 truncate text-2xl font-semibold tracking-normal text-foreground/78">
+        <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
           {formatLargeNumber(sinceOpened, sinceOpened >= 100_000)}
         </p>
       </div>
 
-      <div className="relative z-10 mt-3 rounded-md border border-border bg-background/70 px-2.5 py-1.5">
-        <p className="truncate text-xs font-medium text-muted-foreground">
+      {/* Rate row */}
+      <div className={`mx-3 mb-3 mt-3 rounded-md px-2.5 py-1.5 ${categoryStyle.rateBg}`}>
+        <p className={`text-xs font-medium ${categoryStyle.rateText}`}>
           {formatRate(selectedRate, statistic.unit, timeScale)}
         </p>
       </div>
-
-      <div className="relative z-10 mt-2.5 flex flex-wrap gap-1.5">
-        <ConfidenceBadge confidence={statistic.confidence} />
-        <DataModeBadge dataMode={statistic.dataMode} />
-      </div>
     </article>
   );
-}
-
-interface CategoryMotionCueProps {
-  category: Statistic["category"];
-  toneClass: string;
-}
-
-function CategoryMotionCue({ category, toneClass }: CategoryMotionCueProps) {
-  if (category === "Travel") {
-    return (
-      <div className={`stat-cue stat-cue-travel ${toneClass}`} aria-hidden="true">
-        <span />
-      </div>
-    );
-  }
-
-  if (category === "Technology") {
-    return <div className={`stat-cue stat-cue-technology ${toneClass}`} aria-hidden="true" />;
-  }
-
-  if (category === "Money") {
-    return (
-      <div className={`stat-cue stat-cue-money ${toneClass}`} aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
-      </div>
-    );
-  }
-
-  if (category === "Environment") {
-    return (
-      <div className={`stat-cue stat-cue-environment ${toneClass}`} aria-hidden="true">
-        <span />
-        <span />
-        <span />
-      </div>
-    );
-  }
-
-  return null;
 }

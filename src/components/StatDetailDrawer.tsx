@@ -5,13 +5,12 @@ import {
   Clock3,
   ExternalLink,
   Globe2,
-  Info,
   LineChart,
   Sprout,
   Timer,
   X,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ConfidenceBadge } from "./ConfidenceBadge";
 import { DataModeBadge } from "./DataModeBadge";
 import { StatIcon } from "./StatIcon";
@@ -33,51 +32,30 @@ interface StatDetailDrawerProps {
 type StatVisualVariant = "bar" | "flight" | "flow" | "line" | "pulse" | "ripple" | "signal";
 
 function getStatVisualVariant(statistic: Statistic): StatVisualVariant {
-  const searchText = `${statistic.id} ${statistic.category} ${statistic.icon} ${statistic.tags.join(
-    " ",
-  )}`.toLowerCase();
+  const searchText =
+    `${statistic.id} ${statistic.category} ${statistic.icon} ${statistic.tags.join(" ")}`.toLowerCase();
 
-  if (/flight|aviation|takeoff|landing|passenger|plane/.test(searchText)) {
-    return "flight";
-  }
-
-  if (/stock|crypto|trading|market|payment|purchase|ecommerce|sales|money/.test(searchText)) {
+  if (/flight|aviation|takeoff|landing|passenger|plane/.test(searchText)) return "flight";
+  if (/stock|crypto|trading|market|payment|purchase|ecommerce|sales|money/.test(searchText))
     return "line";
-  }
-
-  if (
-    /co2|carbon|climate|tree|forest|plastic|waste|renewable|energy|environment/.test(searchText)
-  ) {
+  if (/co2|carbon|climate|tree|forest|plastic|waste|renewable|energy|environment/.test(searchText))
     return "bar";
-  }
-
-  if (/birth|babies|population|death|mortality|marriage|school|earthquake|storm/.test(searchText)) {
+  if (/birth|babies|population|death|mortality|marriage|school|earthquake|storm/.test(searchText))
     return "ripple";
-  }
-
-  if (/internet|email|message|video|app|social|ai|technology|download/.test(searchText)) {
+  if (/internet|email|message|video|app|social|ai|technology|download/.test(searchText))
     return "signal";
-  }
-
-  if (/crime|emergency|hospital|health|society|safety/.test(searchText)) {
-    return "pulse";
-  }
+  if (/crime|emergency|hospital|health|society|safety/.test(searchText)) return "pulse";
 
   return statistic.category === "Travel" ? "flight" : "flow";
 }
 
-function confidenceExplanation(statistic: Statistic): string {
-  if (statistic.confidence === "high") {
-    return "High confidence means the seed value is based on a strong public statistical series or major institutional report.";
-  }
-
-  if (statistic.confidence === "medium") {
-    return "Medium confidence means the estimate is grounded in public reporting, but may be rounded or dependent on industry methodology.";
-  }
-
+function confidenceLabel(statistic: Statistic): string {
+  if (statistic.confidence === "high") return "Based on a strong institutional data series";
+  if (statistic.confidence === "medium")
+    return "Grounded in public reporting, may be rounded";
   return statistic.isFuzzyEstimate
-    ? "Low confidence means this is a directional or playful estimate. It is useful for curiosity, not exact measurement."
-    : "Low confidence means the source coverage is incomplete or not standardized globally.";
+    ? "Directional or playful estimate — useful for curiosity"
+    : "Source coverage is incomplete or not globally standardized";
 }
 
 function StatHeroVisual({ statistic }: { statistic: Statistic }) {
@@ -112,7 +90,11 @@ function StatHeroVisual({ statistic }: { statistic: Statistic }) {
               strokeWidth="3"
             />
             <circle r="5" fill="currentColor" opacity="0.72">
-              <animateMotion dur="5.8s" repeatCount="indefinite" path="M40 120 C 174 18 315 128 596 48" />
+              <animateMotion
+                dur="5.8s"
+                repeatCount="indefinite"
+                path="M40 120 C 174 18 315 128 596 48"
+              />
             </circle>
             <circle r="3.5" fill="currentColor" opacity="0.5">
               <animateMotion
@@ -186,12 +168,42 @@ function StatHeroVisual({ statistic }: { statistic: Statistic }) {
         {variant === "ripple" && (
           <svg className="h-full w-full" viewBox="0 0 640 160" preserveAspectRatio="none">
             <circle cx="320" cy="80" r="12" fill="currentColor" opacity="0.2" />
-            <circle className="stat-visual-ripple stat-visual-ripple-1" cx="320" cy="80" r="24" />
-            <circle className="stat-visual-ripple stat-visual-ripple-2" cx="320" cy="80" r="38" />
-            <circle className="stat-visual-ripple stat-visual-ripple-3" cx="320" cy="80" r="52" />
-            <circle className="stat-visual-pop-dot stat-visual-pop-dot-1" cx="194" cy="70" r="5" />
-            <circle className="stat-visual-pop-dot stat-visual-pop-dot-2" cx="444" cy="54" r="4" />
-            <circle className="stat-visual-pop-dot stat-visual-pop-dot-3" cx="476" cy="112" r="5" />
+            <circle
+              className="stat-visual-ripple stat-visual-ripple-1"
+              cx="320"
+              cy="80"
+              r="24"
+            />
+            <circle
+              className="stat-visual-ripple stat-visual-ripple-2"
+              cx="320"
+              cy="80"
+              r="38"
+            />
+            <circle
+              className="stat-visual-ripple stat-visual-ripple-3"
+              cx="320"
+              cy="80"
+              r="52"
+            />
+            <circle
+              className="stat-visual-pop-dot stat-visual-pop-dot-1"
+              cx="194"
+              cy="70"
+              r="5"
+            />
+            <circle
+              className="stat-visual-pop-dot stat-visual-pop-dot-2"
+              cx="444"
+              cy="54"
+              r="4"
+            />
+            <circle
+              className="stat-visual-pop-dot stat-visual-pop-dot-3"
+              cx="476"
+              cy="112"
+              r="5"
+            />
           </svg>
         )}
 
@@ -208,8 +220,18 @@ function StatHeroVisual({ statistic }: { statistic: Statistic }) {
               strokeOpacity="0.66"
               strokeWidth="4"
             />
-            <circle className="stat-visual-pop-dot stat-visual-pop-dot-2" cx="190" cy="48" r="5" />
-            <circle className="stat-visual-pop-dot stat-visual-pop-dot-3" cx="380" cy="100" r="4" />
+            <circle
+              className="stat-visual-pop-dot stat-visual-pop-dot-2"
+              cx="190"
+              cy="48"
+              r="5"
+            />
+            <circle
+              className="stat-visual-pop-dot stat-visual-pop-dot-3"
+              cx="380"
+              cy="100"
+              r="4"
+            />
           </svg>
         )}
 
@@ -237,9 +259,24 @@ function StatHeroVisual({ statistic }: { statistic: Statistic }) {
               strokeOpacity="0.34"
               strokeWidth="4"
             />
-            <circle className="stat-visual-stream-dot stat-visual-stream-dot-1" cx="86" cy="102" r="5" />
-            <circle className="stat-visual-stream-dot stat-visual-stream-dot-2" cx="274" cy="90" r="4" />
-            <circle className="stat-visual-stream-dot stat-visual-stream-dot-3" cx="462" cy="62" r="5" />
+            <circle
+              className="stat-visual-stream-dot stat-visual-stream-dot-1"
+              cx="86"
+              cy="102"
+              r="5"
+            />
+            <circle
+              className="stat-visual-stream-dot stat-visual-stream-dot-2"
+              cx="274"
+              cy="90"
+              r="4"
+            />
+            <circle
+              className="stat-visual-stream-dot stat-visual-stream-dot-3"
+              cx="462"
+              cy="62"
+              r="5"
+            />
           </svg>
         )}
 
@@ -252,10 +289,30 @@ function StatHeroVisual({ statistic }: { statistic: Statistic }) {
               strokeOpacity="0.15"
               strokeWidth="2"
             />
-            <circle className="stat-visual-stream-dot stat-visual-stream-dot-1" cx="116" cy="54" r="5" />
-            <circle className="stat-visual-stream-dot stat-visual-stream-dot-2" cx="272" cy="84" r="5" />
-            <circle className="stat-visual-stream-dot stat-visual-stream-dot-3" cx="428" cy="114" r="5" />
-            <circle className="stat-visual-pop-dot stat-visual-pop-dot-1" cx="522" cy="84" r="4" />
+            <circle
+              className="stat-visual-stream-dot stat-visual-stream-dot-1"
+              cx="116"
+              cy="54"
+              r="5"
+            />
+            <circle
+              className="stat-visual-stream-dot stat-visual-stream-dot-2"
+              cx="272"
+              cy="84"
+              r="5"
+            />
+            <circle
+              className="stat-visual-stream-dot stat-visual-stream-dot-3"
+              cx="428"
+              cy="114"
+              r="5"
+            />
+            <circle
+              className="stat-visual-pop-dot stat-visual-pop-dot-1"
+              cx="522"
+              cy="84"
+              r="4"
+            />
           </svg>
         )}
       </div>
@@ -269,25 +326,23 @@ function StatHeroVisual({ statistic }: { statistic: Statistic }) {
 }
 
 export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) {
+  const [methodologyOpen, setMethodologyOpen] = useState(false);
+
   useEffect(() => {
-    if (!statistic) {
-      return;
-    }
+    if (!statistic) return;
+    setMethodologyOpen(false);
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        onClose();
-      }
+      if (event.key === "Escape") onClose();
     }
 
     window.addEventListener("keydown", handleKeyDown);
-
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose, statistic]);
 
-  if (!statistic) {
-    return null;
-  }
+  if (!statistic) return null;
+
+  const categoryStyle = getCategoryStyle(statistic.category);
 
   const conversions = [
     {
@@ -320,16 +375,12 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
     },
     {
       label: "Per year",
-      sublabel: "every year",
+      sublabel: "the seed value",
       value: statistic.yearlyEstimate,
       icon: CalendarRange,
-      style: "text-sky-400 bg-sky-500/10",
+      style: `${categoryStyle.iconBg} ${categoryStyle.text}`,
     },
   ] as const;
-  const categoryStyle = getCategoryStyle(statistic.category);
-  const estimateLabel = statistic.isFuzzyEstimate
-    ? "Directional estimate"
-    : "Public source estimate";
 
   return (
     <div
@@ -338,38 +389,35 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
       aria-modal="true"
       aria-labelledby="stat-drawer-title"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) {
-          onClose();
-        }
+        if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="my-auto max-h-[calc(100vh-1rem)] w-full max-w-4xl overflow-y-auto rounded-2xl border border-border bg-card/95 p-4 text-card-foreground shadow-panel dark:bg-[#07101d]/95 sm:max-h-[calc(100vh-2rem)] sm:p-5">
+      <section className="my-auto max-h-[calc(100vh-1rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card/95 p-4 text-card-foreground shadow-panel dark:bg-[#07101d]/95 sm:max-h-[calc(100vh-2rem)] sm:p-5">
+
+        {/* Header */}
         <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+          <div className="flex min-w-0 items-start gap-3">
             <div
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${categoryStyle.iconBg} ${categoryStyle.text} shadow-inner sm:h-14 sm:w-14`}
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${categoryStyle.iconBg} ${categoryStyle.text}`}
             >
-              <StatIcon name={statistic.icon} className="h-6 w-6 sm:h-7 sm:w-7" />
+              <StatIcon name={statistic.icon} className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <p className={`text-sm font-semibold ${categoryStyle.text}`}>
+              <p className={`text-xs font-semibold uppercase tracking-widest ${categoryStyle.text}`}>
                 {statistic.category}
               </p>
               <h2
                 id="stat-drawer-title"
-                className="mt-1 text-2xl font-semibold tracking-normal sm:text-3xl"
+                className="mt-0.5 text-xl font-semibold leading-snug sm:text-2xl"
               >
                 {statistic.title}
               </h2>
-              <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground sm:text-sm">
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
                 <DataModeBadge dataMode={statistic.dataMode} />
-                <span aria-hidden="true">•</span>
-                <span>{estimateLabel}</span>
                 {statistic.sensitivity === "Sensitive" && (
-                  <>
-                    <span aria-hidden="true">•</span>
-                    <span>Contextual topic</span>
-                  </>
+                  <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                    Contextual topic
+                  </span>
                 )}
               </div>
             </div>
@@ -377,163 +425,140 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
           <button
             type="button"
             onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border bg-background/70 text-muted-foreground shadow-subtle transition hover:bg-accent hover:text-accent-foreground"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-background/70 text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
             aria-label="Close details"
-            title="Close details"
           >
-            <X className="h-5 w-5" aria-hidden="true" />
+            <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
 
+        {/* Hero visual — kept exactly as original */}
         <StatHeroVisual statistic={statistic} />
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.82fr)]">
-          <div className="space-y-4">
-            <div className={`rounded-xl border ${categoryStyle.border} bg-background/70 p-4`}>
-              <div className="flex items-start gap-3">
+        {/* Description */}
+        <p className="mt-4 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+          {statistic.description}
+        </p>
+
+        {/* Context note */}
+        {statistic.contextNote && (
+          <p className="mt-2 text-xs italic leading-5 text-muted-foreground/70">
+            {statistic.contextNote}
+          </p>
+        )}
+
+        {/* Converted averages */}
+        <div className="mt-5">
+          <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Converted averages
+          </h3>
+          <div className="overflow-hidden rounded-xl border border-border bg-background/70">
+            {conversions.map((conversion) => {
+              const Icon = conversion.icon;
+              return (
                 <div
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${categoryStyle.iconBg} ${categoryStyle.text}`}
+                  key={conversion.label}
+                  className="flex items-center justify-between gap-3 border-b border-border px-3 py-2.5 last:border-b-0"
                 >
-                  <Info className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <p className="text-base leading-7 text-foreground">{statistic.description}</p>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-violet-500/35 bg-violet-500/[0.04] p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-violet-500/15 text-violet-300">
-                  <LineChart className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-violet-300">
-                    Methodology
-                  </p>
-                  <p className="mt-2 text-sm leading-6 text-foreground sm:text-base">
-                    {statistic.methodology}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {statistic.contextNote && (
-              <div className="rounded-xl border border-border bg-muted/60 p-4 text-sm leading-6 text-muted-foreground">
-                {statistic.contextNote}
-              </div>
-            )}
-
-            <div className="rounded-xl border border-blue-500/40 bg-blue-500/[0.04] p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-500/15 text-blue-300">
-                  <Globe2 className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-300">
-                    Source
-                  </p>
-                  {statistic.sourceUrl ? (
-                    <a
-                      href={statistic.sourceUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 inline-flex max-w-full items-center gap-2 text-sm font-medium text-foreground hover:text-primary hover:underline sm:text-base"
-                    >
-                      <span className="truncate">{statistic.sourceName}</span>
-                      <ExternalLink className="h-4 w-4 shrink-0" aria-hidden="true" />
-                    </a>
-                  ) : (
-                    <p className="mt-2 text-sm font-medium sm:text-base">
-                      {statistic.sourceName}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border bg-muted/50 p-4">
-              <div className="flex items-start gap-3">
-                <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                <p className="text-sm leading-6 text-muted-foreground">
-                  This is an average estimate based on available public data, not a real-time exact
-                  count.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-base font-semibold tracking-normal">Converted averages</h3>
-              <div className="mt-3 overflow-hidden rounded-xl border border-border bg-background/70">
-                {conversions.map((conversion) => {
-                  const Icon = conversion.icon;
-
-                  return (
+                  <div className="flex items-center gap-2.5">
                     <div
-                      key={conversion.label}
-                      className="grid grid-cols-[1fr_auto] items-center gap-3 border-b border-border px-3 py-3 last:border-b-0"
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${conversion.style}`}
                     >
-                      <div className="flex min-w-0 items-center gap-3">
-                        <div
-                          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${conversion.style}`}
-                        >
-                          <Icon className="h-4 w-4" aria-hidden="true" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold">{conversion.label}</p>
-                          <p className="truncate text-xs text-muted-foreground">
-                            {conversion.sublabel}
-                          </p>
-                        </div>
-                      </div>
-                      <p className="max-w-[9rem] text-right text-sm font-semibold text-foreground sm:text-base">
-                        {formatLargeNumber(conversion.value, conversion.value >= 10_000)}{" "}
-                        <span className="text-xs font-medium text-muted-foreground sm:text-sm">
-                          {statistic.unit}
-                        </span>
-                      </p>
+                      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                     </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              <div className="rounded-xl border border-emerald-500/35 bg-emerald-500/[0.04] p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-emerald-300">
-                      Yearly seed
-                    </p>
-                    <p className="mt-2 truncate text-2xl font-semibold tracking-normal">
-                      {formatLargeNumber(statistic.yearlyEstimate, true)}
-                    </p>
-                    <p className="mt-1 truncate text-sm text-muted-foreground">
+                    <span className="text-sm font-medium">{conversion.label}</span>
+                  </div>
+                  <span className="text-sm font-semibold tabular-nums">
+                    {formatLargeNumber(conversion.value, conversion.value >= 10_000)}{" "}
+                    <span className="text-xs font-normal text-muted-foreground">
                       {statistic.unit}
-                    </p>
-                  </div>
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-emerald-500/25 bg-emerald-500/10 text-emerald-300">
-                    <Sprout className="h-5 w-5" aria-hidden="true" />
-                  </div>
+                    </span>
+                  </span>
                 </div>
-              </div>
-
-              <div className="rounded-xl border border-amber-500/40 bg-amber-500/[0.04] p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-300">
-                      Confidence
-                    </p>
-                    <p className="mt-2 text-sm leading-6 text-foreground">
-                      {confidenceExplanation(statistic)}
-                    </p>
-                  </div>
-                  <ConfidenceBadge confidence={statistic.confidence} />
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         </div>
+
+        {/* Info row: source + confidence + yearly seed */}
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {/* Source */}
+          <div
+            className={`rounded-xl border ${categoryStyle.border} ${categoryStyle.iconBg} p-3`}
+          >
+            <div className="mb-1 flex items-center gap-1.5">
+              <Globe2 className={`h-3.5 w-3.5 ${categoryStyle.text}`} aria-hidden="true" />
+              <p
+                className={`text-[10px] font-semibold uppercase tracking-wider ${categoryStyle.text}`}
+              >
+                Source
+              </p>
+            </div>
+            {statistic.sourceUrl ? (
+              <a
+                href={statistic.sourceUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 text-xs font-medium text-foreground hover:underline"
+              >
+                <span className="line-clamp-2">{statistic.sourceName}</span>
+                <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
+              </a>
+            ) : (
+              <p className="line-clamp-2 text-xs font-medium">{statistic.sourceName}</p>
+            )}
+          </div>
+
+          {/* Confidence */}
+          <div className="rounded-xl border border-border bg-background/70 p-3">
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Confidence
+              </p>
+              <ConfidenceBadge confidence={statistic.confidence} />
+            </div>
+            <p className="text-xs leading-4 text-muted-foreground">
+              {confidenceLabel(statistic)}
+            </p>
+          </div>
+
+          {/* Yearly seed */}
+          <div className="rounded-xl border border-border bg-background/70 p-3">
+            <div className="mb-1 flex items-center gap-1.5">
+              <Sprout className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Yearly seed
+              </p>
+            </div>
+            <p className="text-lg font-semibold tabular-nums">
+              {formatLargeNumber(statistic.yearlyEstimate, true)}
+            </p>
+            <p className="text-xs text-muted-foreground">{statistic.unit}</p>
+          </div>
+        </div>
+
+        {/* Methodology — collapsed by default */}
+        <div className="mt-3 overflow-hidden rounded-xl border border-border">
+          <button
+            type="button"
+            onClick={() => setMethodologyOpen((o) => !o)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-accent/50"
+          >
+            <div className="flex items-center gap-2">
+              <LineChart className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
+              <span className="text-sm font-medium">How is this calculated?</span>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              {methodologyOpen ? "Hide" : "Show"}
+            </span>
+          </button>
+          {methodologyOpen && (
+            <div className="border-t border-border px-4 py-3">
+              <p className="text-sm leading-6 text-muted-foreground">{statistic.methodology}</p>
+            </div>
+          )}
+        </div>
+
       </section>
     </div>
   );
