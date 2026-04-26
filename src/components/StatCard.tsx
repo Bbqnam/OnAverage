@@ -1,8 +1,8 @@
-import { Star, TrendingDown, TrendingUp } from "lucide-react";
+import { Star } from "lucide-react";
 import { calculateSincePageLoad, getRateForScale, getRateRangeForScale } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { StatIcon } from "./StatIcon";
-import { formatLargeNumber, formatRate } from "../lib/formatting";
+import { formatLargeNumber } from "../lib/formatting";
 import type { Statistic, TimeScale } from "../types/statistic";
 
 interface StatCardProps {
@@ -32,16 +32,21 @@ export function StatCard({
   const selectedRate = getRateForScale(statistic.yearlyEstimate, timeScale);
   const categoryStyle = getCategoryStyle(statistic.category);
   const ci = statistic.confidenceInterval;
-  const hist = statistic.historicalChange;
 
   const rateRange = ci
     ? getRateRangeForScale(statistic.yearlyEstimate, ci, timeScale)
     : null;
 
+  // Format rate as a subtle string
+  const scaleLabel = timeScale === "year" ? "yr" : timeScale === "minute" ? "min" : timeScale === "hour" ? "hr" : timeScale;
+  const rateNote = rateRange
+    ? `${formatLargeNumber(rateRange.low, rateRange.low >= 10_000)}–${formatLargeNumber(rateRange.high, rateRange.high >= 10_000)} / ${scaleLabel}`
+    : `${formatLargeNumber(selectedRate, selectedRate >= 10_000)} / ${scaleLabel}`;
+
   return (
     <article
       onClick={() => onOpen(statistic)}
-      className={`group relative cursor-pointer overflow-hidden rounded-lg border-y border-r bg-card text-card-foreground transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${categoryStyle.leftBorder} ${
+      className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-lg border-y border-r bg-card text-card-foreground transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${categoryStyle.leftBorder} ${
         isHighlighted ? "ring-2 ring-primary/30" : ""
       }`}
     >
@@ -64,10 +69,10 @@ export function StatCard({
         </button>
       )}
 
-      {/* Header: icon + title side by side */}
+      {/* Header: icon + title */}
       <div className="flex items-start gap-3 px-3 pt-3">
         <div
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
+          className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
         >
           {(statistic.category === "Life" ||
             statistic.category === "Events" ||
@@ -79,15 +84,12 @@ export function StatCard({
           <StatIcon name={statistic.icon} className="relative z-10 h-4 w-4" />
         </div>
 
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pr-5">
           {showCategory && (
-            <p
-              className={`text-[10px] font-semibold uppercase tracking-widest ${categoryStyle.text}`}
-            >
+            <p className={`text-[10px] font-semibold uppercase tracking-widest ${categoryStyle.text}`}>
               {statistic.category}
             </p>
           )}
-
           <h2 className="mt-0.5 text-sm font-semibold leading-snug text-foreground">
             {statistic.title}
           </h2>
@@ -97,59 +99,19 @@ export function StatCard({
         </div>
       </div>
 
-      {/* Live counter */}
-      <div className="px-3 pt-3">
+      {/* Live counter + subtle rate inline */}
+      <div className="flex-1 px-3 pb-3 pt-3">
         <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
           Since you opened
         </p>
         <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
           {formatLargeNumber(sinceOpened, sinceOpened >= 100_000)}
         </p>
-      </div>
-
-      {/* Rate row — with optional confidence interval range */}
-      <div className={`mx-3 mb-3 mt-3 rounded-md px-2.5 py-1.5 ${categoryStyle.rateBg}`}>
-        {rateRange ? (
-          <p className={`text-xs font-medium ${categoryStyle.rateText}`}>
-            {formatLargeNumber(rateRange.low, rateRange.low >= 10_000)}–
-            {formatLargeNumber(rateRange.high, rateRange.high >= 10_000)}{" "}
-            {statistic.unit} / {timeScale === "year" ? "year" : timeScale}
-          </p>
-        ) : (
-          <p className={`text-xs font-medium ${categoryStyle.rateText}`}>
-            {formatRate(selectedRate, statistic.unit, timeScale)}
-          </p>
-        )}
-      </div>
-
-      {/* Historical change pill */}
-      {hist && (
-        <div className="px-3 pb-2.5">
-          <span
-            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${
-              hist.percentChange >= 0
-                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                : "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300"
-            }`}
-            title={`Compared to ${hist.label}`}
-          >
-            {hist.percentChange >= 0 ? (
-              <TrendingUp className="h-3 w-3" />
-            ) : (
-              <TrendingDown className="h-3 w-3" />
-            )}
-            {hist.percentChange >= 0 ? "+" : ""}
-            {hist.percentChange}% vs {hist.label}
-          </span>
-        </div>
-      )}
-
-      {/* Source year note */}
-      {statistic.sourceYear && (
-        <p className="px-3 pb-2 text-[10px] text-muted-foreground/70">
-          Based on {statistic.sourceYear} data
+        {/* Rate as subtle inline note — same for every card, no height variation */}
+        <p className={`mt-1 text-[11px] ${categoryStyle.rateText} opacity-70`}>
+          ≈ {rateNote}
         </p>
-      )}
+      </div>
     </article>
   );
 }
