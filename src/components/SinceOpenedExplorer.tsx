@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { Activity, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Activity } from "lucide-react";
 import { DataModeBadge } from "./DataModeBadge";
 import { StatIcon } from "./StatIcon";
 import { calculateSincePageLoad } from "../lib/calculations";
@@ -43,6 +43,34 @@ function createInterestingFact(statistic: Statistic) {
   )} seconds`;
 }
 
+function createMovementContext(total: number) {
+  if (total >= 8_000_000_000) {
+    return "More events than there are people on Earth.";
+  }
+
+  if (total >= 38_000_000) {
+    return "Roughly a greater Tokyo metro area of events.";
+  }
+
+  if (total >= 8_500_000) {
+    return "About a New York City of events.";
+  }
+
+  if (total >= 1_600_000) {
+    return "About a Philadelphia of events.";
+  }
+
+  if (total >= 100_000) {
+    return "Enough events to fill a large stadium.";
+  }
+
+  if (total >= 10_000) {
+    return "A small town's worth of events.";
+  }
+
+  return "The counter starts small, then compounds quickly.";
+}
+
 export function SinceOpenedExplorer({
   statistics,
   openedAt,
@@ -77,11 +105,8 @@ export function SinceOpenedExplorer({
   );
 
   const factStatistic = highlights[factIndex % highlights.length] ?? highlights[0];
-
-  const interestingFact = useMemo(
-    () => createInterestingFact(factStatistic),
-    [factStatistic],
-  );
+  const interestingFact = createInterestingFact(factStatistic);
+  const movementContext = createMovementContext(totalSinceOpened);
 
   if (highlights.length === 0) {
     return null;
@@ -138,6 +163,12 @@ export function SinceOpenedExplorer({
               {formatLargeNumber(totalSinceOpened, totalSinceOpened >= 100_000)}
             </strong>{" "}
             modeled events since you opened
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {movementContext}
+          </p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground/70">
+            {interestingFact}
           </p>
         </div>
       </div>

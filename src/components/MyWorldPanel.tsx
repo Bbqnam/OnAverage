@@ -1,10 +1,9 @@
-import { Globe, Star, X } from "lucide-react";
+import { Globe, X } from "lucide-react";
 import { StatCard } from "./StatCard";
 import type { Statistic, TimeScale } from "../types/statistic";
 
 interface MyWorldPanelProps {
   statistics: Statistic[];
-  myWorldIds: string[];
   favorites: string[];
   openedAt: number;
   now: number;
@@ -16,7 +15,6 @@ interface MyWorldPanelProps {
 
 export function MyWorldPanel({
   statistics,
-  myWorldIds,
   favorites,
   openedAt,
   now,
@@ -25,17 +23,11 @@ export function MyWorldPanel({
   onToggleFavorite,
   onClose,
 }: MyWorldPanelProps) {
-  const myWorldStats = myWorldIds
-    .map((id) => statistics.find((s) => s.id === id))
-    .filter((s): s is Statistic => Boolean(s));
-
-  const favoriteStats = favorites
+  const myWorldStats = favorites
     .map((id) => statistics.find((s) => s.id === id))
     .filter((s): s is Statistic => Boolean(s));
 
   const isEmpty = myWorldStats.length === 0;
-  const unpinnedFavoriteStats = favoriteStats.filter((stat) => !myWorldIds.includes(stat.id));
-  const showFavoritesInMainArea = isEmpty && favoriteStats.length > 0;
 
   return (
     <div className="rounded-lg border border-border bg-card shadow-subtle">
@@ -60,37 +52,14 @@ export function MyWorldPanel({
 
       {/* My World grid */}
       <div className="p-3">
-        {showFavoritesInMainArea ? (
-          <div>
-            <div className="mb-2 flex items-center gap-1.5">
-              <Star className="h-3.5 w-3.5 text-amber-400" fill="currentColor" />
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Favorites
-              </h3>
-            </div>
-            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {favoriteStats.map((stat) => (
-                <StatCard
-                  key={stat.id}
-                  statistic={stat}
-                  openedAt={openedAt}
-                  now={now}
-                  timeScale={timeScale}
-                  isFavorite
-                  onOpen={onOpen}
-                  onToggleFavorite={onToggleFavorite}
-                />
-              ))}
-            </div>
-          </div>
-        ) : isEmpty ? (
+        {isEmpty ? (
           <div className="rounded-lg border border-dashed border-border py-6 text-center">
             <Globe className="mx-auto mb-2 h-7 w-7 text-muted-foreground/40" />
             <p className="text-sm font-medium text-muted-foreground">
               Your custom dashboard is empty
             </p>
             <p className="mt-1 text-xs text-muted-foreground/70">
-              Click the ⊕ on any card to pin up to 10 signals here.
+              Star any card to save it here.
             </p>
           </div>
         ) : (
@@ -102,37 +71,11 @@ export function MyWorldPanel({
                 openedAt={openedAt}
                 now={now}
                 timeScale={timeScale}
-                isFavorite={favorites.includes(stat.id)}
+                isFavorite
                 onOpen={onOpen}
                 onToggleFavorite={onToggleFavorite}
               />
             ))}
-          </div>
-        )}
-
-        {/* Favorites section */}
-        {!isEmpty && unpinnedFavoriteStats.length > 0 && (
-          <div className="mt-4">
-            <div className="mb-2 flex items-center gap-1.5">
-              <Star className="h-3.5 w-3.5 text-amber-400" fill="currentColor" />
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Favorites
-              </h3>
-            </div>
-            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {unpinnedFavoriteStats.map((stat) => (
-                <StatCard
-                  key={stat.id}
-                  statistic={stat}
-                  openedAt={openedAt}
-                  now={now}
-                  timeScale={timeScale}
-                  isFavorite
-                  onOpen={onOpen}
-                  onToggleFavorite={onToggleFavorite}
-                />
-              ))}
-            </div>
           </div>
         )}
       </div>

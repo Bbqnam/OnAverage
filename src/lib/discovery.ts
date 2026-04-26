@@ -93,8 +93,20 @@ export function getTrendingStats(
   seed: number,
   limit = 5,
 ): Statistic[] {
+  const shifted = statistics
+    .filter((statistic) => statistic.historicalChange)
+    .sort(
+      (a, b) =>
+        Math.abs(b.historicalChange?.percentChange ?? 0) -
+        Math.abs(a.historicalChange?.percentChange ?? 0),
+    );
   const curated = byId(statistics, trendingIds);
-  const pool = curated.length > 0 ? curated : statistics;
+  const pool =
+    shifted.length > 0
+      ? shifted.slice(0, Math.max(limit * 2, limit))
+      : curated.length > 0
+        ? curated
+        : statistics;
 
   return rotate(pool, seed).slice(0, limit);
 }

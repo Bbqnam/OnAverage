@@ -66,8 +66,8 @@ export function StatCard({
               e.stopPropagation();
               onToggleFavorite(statistic.id);
             }}
-            aria-label={isFavorite ? "Remove from My World" : "Add to My World"}
-            title={isFavorite ? "Remove from My World" : "Add to My World"}
+            aria-label={isFavorite ? "Remove from My World" : "Save to My World"}
+            title={isFavorite ? "Remove from My World" : "Save to My World"}
             className={`rounded-full border p-0.5 transition ${
               isFavorite
                 ? "border-amber-400/30 bg-amber-400/10 text-amber-500 opacity-100"
@@ -94,7 +94,7 @@ export function StatCard({
                   {statistic.category}
                 </p>
               )}
-              <h2 className="mt-0.5 truncate text-sm font-bold leading-snug text-foreground transition-colors group-hover:text-primary">
+              <h2 className="mt-0.5 truncate text-sm font-bold leading-tight text-foreground transition-colors group-hover:text-primary">
                 {statistic.title}
               </h2>
               <p className="truncate text-[11px] text-muted-foreground">
@@ -103,19 +103,16 @@ export function StatCard({
             </div>
           </div>
 
-          <div className="mt-2 flex items-end justify-between gap-2">
+          <div className="mt-1.5 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                Since opened
-              </p>
-              <p className="mt-0.5 text-lg font-semibold leading-none tracking-tight text-foreground">
+              <p className="text-2xl font-bold leading-none tracking-tight text-foreground">
                 {formatLargeNumber(sinceOpened, sinceOpened >= 100_000)}
               </p>
-            </div>
-            <div className="min-w-0 text-right">
-              <p className={`truncate text-[11px] leading-tight ${categoryStyle.rateText} opacity-80`}>
+              <p className={`mt-1 truncate text-[11px] leading-tight ${categoryStyle.rateText} opacity-85`}>
                 ≈ {rateStr}
               </p>
+            </div>
+            <div className="min-w-0 shrink-0 text-right">
               {hist && historicalLabel && (
                 <span
                   title={`Compared with ${hist.label}`}

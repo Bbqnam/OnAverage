@@ -22,14 +22,15 @@ export function TrendingSection({ statistics, onOpenStatistic }: TrendingSection
       <div className="mb-2.5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Flame className="h-4 w-4 text-primary" aria-hidden="true" />
-          <h2 className="text-sm font-semibold">Trending now</h2>
+          <h2 className="text-sm font-semibold">Notable shifts</h2>
         </div>
-        <span className="text-xs text-muted-foreground">refreshes quietly</span>
+        <span className="text-xs text-muted-foreground">largest historical moves</span>
       </div>
       <div className={getBalancedGridClass(statistics.length, "gap-2")}>
         {statistics.map((statistic) => {
           const perSecond = yearlyToPerSecond(statistic.yearlyEstimate);
           const categoryStyle = getCategoryStyle(statistic.category);
+          const change = statistic.historicalChange;
 
           return (
             <button
@@ -49,7 +50,20 @@ export function TrendingSection({ statistics, onOpenStatistic }: TrendingSection
                   {formatLargeNumber(perSecond, perSecond >= 10_000)} / sec
                 </p>
               </div>
-              <DataModeBadge dataMode={statistic.dataMode} />
+              {change ? (
+                <span
+                  title={`Compared with ${change.label}`}
+                  className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                    change.percentChange >= 0
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "bg-rose-500/10 text-rose-500 dark:text-rose-400"
+                  }`}
+                >
+                  {change.percentChange >= 0 ? "+" : ""}{change.percentChange}%
+                </span>
+              ) : (
+                <DataModeBadge dataMode={statistic.dataMode} />
+              )}
             </button>
           );
         })}

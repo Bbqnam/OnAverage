@@ -108,6 +108,15 @@ function App() {
     [dataset.statistics],
   );
 
+  const myWorldPreviewStats = useMemo(
+    () =>
+      prefs.favorites
+        .map((id) => dataset.statistics.find((statistic) => statistic.id === id))
+        .filter((statistic): statistic is Statistic => Boolean(statistic))
+        .slice(0, 5),
+    [dataset.statistics, prefs.favorites],
+  );
+
   function openStatistic(statistic: Statistic) {
     setSelectedStatistic(statistic);
     setHighlightedStatisticId(statistic.id);
@@ -206,32 +215,55 @@ function App() {
                 </button>
 
                 {/* My World */}
-                <button
-                  type="button"
-                  onClick={() => togglePanel("myworld")}
-                  className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition ${
-                    activePanel === "myworld"
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-border bg-background text-foreground hover:bg-accent"
-                  }`}
-                >
-                  <Globe className="h-3.5 w-3.5" aria-hidden="true" />
-                  My World{prefs.myWorldIds.length > 0 && ` (${prefs.myWorldIds.length})`}
-                </button>
+                <div className="group relative">
+                  <button
+                    type="button"
+                    onClick={() => togglePanel("myworld")}
+                    className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition ${
+                      activePanel === "myworld"
+                        ? "border-primary/30 bg-primary/10 text-primary"
+                        : "border-border bg-background text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+                    My World{prefs.favorites.length > 0 && ` (${prefs.favorites.length})`}
+                  </button>
+                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-1 hidden w-56 rounded-lg border border-border bg-popover p-2 text-xs text-popover-foreground shadow-panel group-hover:block">
+                    {myWorldPreviewStats.length > 0 ? (
+                      <>
+                        <p className="mb-1 font-semibold">Saved signals</p>
+                        <div className="space-y-1">
+                          {myWorldPreviewStats.map((statistic) => (
+                            <p key={statistic.id} className="truncate text-muted-foreground">
+                              {statistic.title}
+                            </p>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <p className="text-muted-foreground">Star a card to save it here.</p>
+                    )}
+                  </div>
+                </div>
 
                 {/* Compare */}
-                <button
-                  type="button"
-                  onClick={() => togglePanel("compare")}
-                  className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition ${
-                    activePanel === "compare"
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-border bg-background text-foreground hover:bg-accent"
-                  }`}
-                >
-                  <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
-                  Compare
-                </button>
+                <div className="group relative">
+                  <button
+                    type="button"
+                    onClick={() => togglePanel("compare")}
+                    className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition ${
+                      activePanel === "compare"
+                        ? "border-primary/30 bg-primary/10 text-primary"
+                        : "border-border bg-background text-foreground hover:bg-accent"
+                    }`}
+                  >
+                    <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
+                    Compare
+                  </button>
+                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-1 hidden w-52 rounded-lg border border-border bg-popover p-2 text-xs text-popover-foreground shadow-panel group-hover:block">
+                    Compare any two signals side by side.
+                  </div>
+                </div>
 
                 {/* Share snapshot */}
                 <button
@@ -254,7 +286,6 @@ function App() {
           {activePanel === "myworld" && (
             <MyWorldPanel
               statistics={dataset.statistics}
-              myWorldIds={prefs.myWorldIds}
               favorites={prefs.favorites}
               openedAt={openedAt}
               now={now}

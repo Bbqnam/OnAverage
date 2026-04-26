@@ -12,7 +12,13 @@ export function loadPreferences(): UserPreferences {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_PREFS };
-    return { ...DEFAULT_PREFS, ...JSON.parse(raw) };
+    const parsed = { ...DEFAULT_PREFS, ...JSON.parse(raw) } as UserPreferences;
+    const savedIds = [...parsed.favorites, ...parsed.myWorldIds];
+
+    return {
+      ...parsed,
+      favorites: Array.from(new Set(savedIds)).slice(0, 10),
+    };
   } catch {
     return { ...DEFAULT_PREFS };
   }
@@ -32,7 +38,9 @@ export function toggleFavorite(prefs: UserPreferences, id: string): UserPreferen
     ...prefs,
     favorites: already
       ? prefs.favorites.filter((f) => f !== id)
-      : [...prefs.favorites, id],
+      : prefs.favorites.length >= 10
+        ? prefs.favorites
+        : [...prefs.favorites, id],
   };
 }
 
