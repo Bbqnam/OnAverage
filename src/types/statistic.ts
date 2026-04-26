@@ -6,6 +6,10 @@ export type Category =
   | "Money"
   | "Environment"
   | "Society"
+  | "Health"
+  | "Education"
+  | "Internet"
+  | "Food"
   | "Fun"
   | "Events";
 
@@ -25,6 +29,17 @@ export type ConfidenceFilter = "all" | Confidence;
 
 export type DataModeFilter = "all" | DataMode;
 
+export interface ConfidenceInterval {
+  low: number;   // yearly low estimate
+  high: number;  // yearly high estimate
+}
+
+export interface HistoricalChange {
+  yearsAgo: number;
+  percentChange: number; // positive = grew, negative = shrank
+  label: string; // e.g. "10 years ago"
+}
+
 export interface Statistic {
   id: string;
   title: string;
@@ -37,6 +52,7 @@ export interface Statistic {
   unit: string;
   sourceName: string;
   sourceUrl?: string;
+  sourceYear?: number; // e.g. 2023 — shown as "Based on 2023 data"
   confidence: Confidence;
   dataMode: DataMode;
   sensitivity: Sensitivity;
@@ -46,6 +62,10 @@ export interface Statistic {
   sinceOpenedLabel: string;
   isStatic?: boolean;
   contextNote?: string;
+  confidenceInterval?: ConfidenceInterval;
+  historicalChange?: HistoricalChange;
+  comparisonIds?: string[]; // IDs of stats to compare against
+  surpriseFact?: string;    // "Most people guess X but it's actually Y"
 }
 
 export interface CountryOption {
@@ -58,4 +78,11 @@ export interface CountryDataset {
   name: string;
   status: "available" | "coming-soon";
   statistics: Statistic[];
+}
+
+// Favorites / My World
+export interface UserPreferences {
+  favorites: string[];      // stat IDs
+  myWorldIds: string[];     // up to 10 stat IDs for "My World" mode
+  birthYear: number | null; // for "Since I was born" mode
 }
