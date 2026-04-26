@@ -1,4 +1,5 @@
-import { calculateSincePageLoad, getRateForScale } from "../lib/calculations";
+import { Star, TrendingDown, TrendingUp } from "lucide-react";
+import { calculateSincePageLoad, getRateForScale, getRateRangeForScale } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { StatIcon } from "./StatIcon";
 import { formatLargeNumber, formatRate } from "../lib/formatting";
@@ -10,8 +11,10 @@ interface StatCardProps {
   now: number;
   timeScale: TimeScale;
   isHighlighted?: boolean;
-  showCategory?: boolean; // ← ADDED THIS LINE
+  showCategory?: boolean;
+  isFavorite?: boolean;
   onOpen: (statistic: Statistic) => void;
+  onToggleFavorite?: (id: string) => void;
 }
 
 export function StatCard({
@@ -20,12 +23,20 @@ export function StatCard({
   now,
   timeScale,
   isHighlighted = false,
-  showCategory = true, // ← ADDED THIS LINE
+  showCategory = true,
+  isFavorite = false,
   onOpen,
+  onToggleFavorite,
 }: StatCardProps) {
   const sinceOpened = calculateSincePageLoad(statistic.yearlyEstimate, openedAt, now);
   const selectedRate = getRateForScale(statistic.yearlyEstimate, timeScale);
   const categoryStyle = getCategoryStyle(statistic.category);
+  const ci = statistic.confidenceInterval;
+  const hist = statistic.historicalChange;
+
+  const rateRange = ci
+    ? getRateRangeForScale(statistic.yearlyEstimate, ci, timeScale)
+    : null;
 
   return (
     <article
@@ -34,6 +45,25 @@ export function StatCard({
         isHighlighted ? "ring-2 ring-primary/30" : ""
       }`}
     >
+      {/* Favorite button */}
+      {onToggleFavorite && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(statistic.id);
+          }}
+          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+          className={`absolute right-2 top-2 z-10 rounded-full p-0.5 transition-opacity ${
+            isFavorite
+              ? "text-amber-400 opacity-100"
+              : "text-muted-foreground opacity-0 group-hover:opacity-60 hover:!opacity-100"
+          }`}
+        >
+          <Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} />
+        </button>
+      )}
+
       {/* Header: icon + title side by side */}
       <div className="flex items-start gap-3 px-3 pt-3">
         <div
@@ -50,7 +80,6 @@ export function StatCard({
         </div>
 
         <div className="min-w-0 flex-1">
-          {/* ↓ THIS WHOLE BLOCK IS NEW — only shows category label when showCategory is true */}
           {showCategory && (
             <p
               className={`text-[10px] font-semibold uppercase tracking-widest ${categoryStyle.text}`}
@@ -58,7 +87,6 @@ export function StatCard({
               {statistic.category}
             </p>
           )}
-          {/* ↑ END OF NEW BLOCK */}
 
           <h2 className="mt-0.5 text-sm font-semibold leading-snug text-foreground">
             {statistic.title}
@@ -79,12 +107,49 @@ export function StatCard({
         </p>
       </div>
 
-      {/* Rate row */}
+      {/* Rate row — with optional confidence interval range */}
       <div className={`mx-3 mb-3 mt-3 rounded-md px-2.5 py-1.5 ${categoryStyle.rateBg}`}>
-        <p className={`text-xs font-medium ${categoryStyle.rateText}`}>
-          {formatRate(selectedRate, statistic.unit, timeScale)}
-        </p>
+        {rateRange ? (
+          <p className={`text-xs font-medium ${categoryStyle.rateText}`}>
+            {formatLargeNumber(rateRange.low, rateRange.low >= 10_000)}–
+            {formatLargeNumber(rateRange.high, rateRange.high >= 10_000)}{" "}
+            {statistic.unit} / {timeScale === "year" ? "year" : timeScale}
+          </p>
+        ) : (
+          <p className={`text-xs font-medium ${categoryStyle.rateText}`}>
+            {formatRate(selectedRate, statistic.unit, timeScale)}
+          </p>
+        )}
       </div>
+
+      {/* Historical change pill */}
+      {hist && (
+        <div className="px-3 pb-2.5">
+          <span
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+              hist.percentChange >= 0
+                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                : "border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+            }`}
+            title={`Compared to ${hist.label}`}
+          >
+            {hist.percentChange >= 0 ? (
+              <TrendingUp className="h-3 w-3" />
+            ) : (
+              <TrendingDown className="h-3 w-3" />
+            )}
+            {hist.percentChange >= 0 ? "+" : ""}
+            {hist.percentChange}% vs {hist.label}
+          </span>
+        </div>
+      )}
+
+      {/* Source year note */}
+      {statistic.sourceYear && (
+        <p className="px-3 pb-2 text-[10px] text-muted-foreground/70">
+          Based on {statistic.sourceYear} data
+        </p>
+      )}
     </article>
   );
 }
