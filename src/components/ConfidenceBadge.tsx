@@ -11,12 +11,20 @@ const styles: Record<Confidence, string> = {
   low: "border-muted bg-muted text-muted-foreground",
 };
 
+const tooltips: Record<Confidence, string> = {
+  high: "Source is a major international dataset (UN, WHO, World Bank). Margin of error < 5%.",
+  medium: "Based on a credible study or industry report. Some regional variation may apply.",
+  low: "Rough model estimate — directionally useful but treat as an order-of-magnitude guide.",
+};
+
 export function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${styles[confidence]}`}
+      className={`inline-flex cursor-help items-center rounded-md border px-2 py-0.5 text-xs font-medium ${styles[confidence]}`}
+      title={tooltips[confidence]}
+      aria-label={`Confidence ${formatLabel(confidence)}: ${tooltips[confidence]}`}
     >
-      {formatLabel(confidence)}
+      {formatLabel(confidence)} confidence
     </span>
   );
 }
