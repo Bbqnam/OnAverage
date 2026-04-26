@@ -1,4 +1,4 @@
-import type { TimeScale } from "../types/statistic";
+import type { Statistic, TimeScale } from "../types/statistic";
 
 export const DAYS_PER_YEAR = 365.2425;
 export const HOURS_PER_DAY = 24;
@@ -49,4 +49,27 @@ export function calculateSincePageLoad(
   const elapsedSeconds = Math.max(0, (now - openedAt) / 1000);
 
   return yearlyToPerSecond(yearlyEstimate) * elapsedSeconds;
+}
+
+export function getStatisticDisplayValue(
+  statistic: Statistic,
+  openedAt: number,
+  now = Date.now(),
+): number {
+  if (statistic.isStatic) {
+    return statistic.yearlyEstimate;
+  }
+
+  return calculateSincePageLoad(statistic.yearlyEstimate, openedAt, now);
+}
+
+export function getStatisticRateForScale(
+  statistic: Statistic,
+  scale: TimeScale,
+): number {
+  if (statistic.isStatic) {
+    return statistic.yearlyEstimate;
+  }
+
+  return getRateForScale(statistic.yearlyEstimate, scale);
 }

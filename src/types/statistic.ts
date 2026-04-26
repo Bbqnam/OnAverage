@@ -44,6 +44,7 @@ export interface Statistic {
   tags: string[];
   isFuzzyEstimate: boolean;
   sinceOpenedLabel: string;
+  isStatic?: boolean;
   contextNote?: string;
 }
 

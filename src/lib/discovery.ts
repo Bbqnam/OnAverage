@@ -26,21 +26,31 @@ const trendingIds = [
   "co2-emitted",
 ];
 
-const featuredCompanionIds = [
-  "people-scrolling-phones",
-  "videos-watched",
-  "card-payments-made",
-  "storms-active",
-  "internet-searches",
-  "messages-sent",
-  "ai-prompts-asked",
-  "crypto-trades",
+export const mainFeaturedStatisticId = "asteroids-passing-earth";
+
+export const supportingFeaturedStatisticIds = [
+  "lightning-strikes",
+  "satellites-orbiting-earth",
+  "houses-built",
+  "cars-passing-inspection",
+];
+
+export const featuredStatisticIds = [
+  mainFeaturedStatisticId,
+  ...supportingFeaturedStatisticIds,
 ];
 
 function byId(statistics: Statistic[], ids: string[]): Statistic[] {
   return ids
     .map((id) => statistics.find((statistic) => statistic.id === id))
     .filter((statistic): statistic is Statistic => Boolean(statistic));
+}
+
+function uniqueStats(stats: Statistic[]): Statistic[] {
+  return stats.filter(
+    (statistic, index, array) =>
+      array.findIndex((item) => item.id === statistic.id) === index,
+  );
 }
 
 function rotate<T>(items: T[], seed: number): T[] {
@@ -89,26 +99,17 @@ export function getTrendingStats(
   return rotate(pool, seed).slice(0, limit);
 }
 
-export function getFeaturedCompanionStats(
-  statistics: Statistic[],
-  featuredStatistic: Statistic,
-  limit = 4,
-): Statistic[] {
-  const curated = byId(statistics, featuredCompanionIds).filter(
-    (statistic) => statistic.id !== featuredStatistic.id,
+export function getFeaturedMainStatistic(statistics: Statistic[]): Statistic | null {
+  return (
+    statistics.find((statistic) => statistic.id === mainFeaturedStatisticId) ??
+    null
   );
+}
 
-  if (curated.length >= limit) {
-    return curated.slice(0, limit);
-  }
-
-  const curatedIds = new Set(curated.map((statistic) => statistic.id));
-  const fallback = statistics.filter(
-    (statistic) =>
-      statistic.id !== featuredStatistic.id && !curatedIds.has(statistic.id),
+export function getFeaturedCompanionStats(statistics: Statistic[]): Statistic[] {
+  return uniqueStats(byId(statistics, supportingFeaturedStatisticIds)).filter(
+    (statistic) => statistic.id !== mainFeaturedStatisticId,
   );
-
-  return [...curated, ...fallback].slice(0, limit);
 }
 
 export function pickRandomStatistic(statistics: Statistic[]): Statistic | null {

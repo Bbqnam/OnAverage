@@ -4,7 +4,6 @@ import { AppShell } from "./components/AppShell";
 import { CategoryTabs } from "./components/CategoryTabs";
 import { FeaturedStatCard } from "./components/FeaturedStatCard";
 import { Header } from "./components/Header";
-import { MetricSummaryCards } from "./components/MetricSummaryCards";
 import { SinceOpenedExplorer } from "./components/SinceOpenedExplorer";
 import { StatDetailDrawer } from "./components/StatDetailDrawer";
 import { StatGrid } from "./components/StatGrid";
@@ -12,7 +11,6 @@ import { TimeScaleToggle } from "./components/TimeScaleToggle";
 import { TrendingSection } from "./components/TrendingSection";
 import { statisticsByCountry } from "./data/statistics";
 import {
-  getFeaturedCompanionStats,
   getTrendingStats,
   pickRandomStatistic,
   type SinceOpenedMode,
@@ -78,20 +76,9 @@ function App() {
     [dataset.statistics],
   );
 
-  const featuredCompanionStatistics = useMemo(() => {
-    if (!featuredStatistic) {
-      return [];
-    }
-
-    return getFeaturedCompanionStats(dataset.statistics, featuredStatistic);
-  }, [dataset.statistics, featuredStatistic]);
-
   const sectionStatistics = useMemo(
-    () =>
-      featuredStatistic
-        ? filteredStatistics.filter((statistic) => statistic.id !== featuredStatistic.id)
-        : filteredStatistics,
-    [featuredStatistic, filteredStatistics],
+    () => filteredStatistics,
+    [filteredStatistics],
   );
 
   function openStatistic(statistic: Statistic) {
@@ -150,20 +137,13 @@ function App() {
         </div>
       </section>
 
-      <MetricSummaryCards
-        dataset={dataset}
-        filteredCount={filteredStatistics.length}
-        openedAt={openedAt}
-        now={now}
-      />
-
       {featuredStatistic && (
         <FeaturedStatCard
           statistic={featuredStatistic}
           openedAt={openedAt}
           now={now}
           timeScale={selectedScale}
-          supportingStatistics={featuredCompanionStatistics}
+          rotationStatistics={dataset.statistics}
           onOpen={openStatistic}
         />
       )}

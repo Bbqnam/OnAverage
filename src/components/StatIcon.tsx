@@ -12,15 +12,20 @@ import {
   Circle,
   CircleDot,
   Cloud,
+  Clock,
+  Cog,
   Coffee,
   CreditCard,
   CupSoda,
   DollarSign,
   Download,
+  Droplet,
   Gem,
   GraduationCap,
+  Globe2,
   Heart,
   Home,
+  House,
   Hospital,
   KeyRound,
   Landmark,
@@ -28,10 +33,12 @@ import {
   MessageCircle,
   Moon,
   Newspaper,
+  Orbit,
   Pizza,
   PlaneLanding,
   PlaneTakeoff,
   Recycle,
+  Satellite,
   Search,
   Share2,
   ShieldAlert,
@@ -40,6 +47,7 @@ import {
   Siren,
   Smile,
   Smartphone,
+  Sparkles,
   Sprout,
   SquarePlay,
   Store,
@@ -67,6 +75,8 @@ const icons: Record<string, LucideIcon> = {
   activity: Activity,
   baby: Baby,
   "circle-dot": CircleDot,
+  clock: Clock,
+  cog: Cog,
   "trending-up": TrendingUp,
   sun: Sun,
   moon: Moon,
@@ -87,11 +97,15 @@ const icons: Record<string, LucideIcon> = {
   building: Building2,
   "user-check": UserCheck,
   search: Search,
+  globe: Globe2,
+  sparkles: Sparkles,
   mail: Mail,
   "message-circle": MessageCircle,
   newspaper: Newspaper,
+  orbit: Orbit,
   "play-square": SquarePlay,
   download: Download,
+  droplet: Droplet,
   share: Share2,
   bot: Bot,
   "credit-card": CreditCard,
@@ -106,10 +120,12 @@ const icons: Record<string, LucideIcon> = {
   "graduation-cap": GraduationCap,
   "book-open": BookOpen,
   home: Home,
+  house: House,
   cloud: Cloud,
   "tree-pine": TreePine,
   sprout: Sprout,
   recycle: Recycle,
+  satellite: Satellite,
   trash: Trash2,
   zap: Zap,
   pizza: Pizza,
@@ -122,6 +138,29 @@ const icons: Record<string, LucideIcon> = {
 };
 
 export function StatIcon({ name, className = "h-4 w-4" }: StatIconProps) {
+  if (name === "older-person") {
+    return (
+      <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="9" cy="5" r="2.4" />
+        <path d="M7.5 9.5h3.2l2.1 3.2" />
+        <path d="M10.4 10.2 9 15.5" />
+        <path d="M9 15.5 6.6 20" />
+        <path d="M11.4 15.5 13.6 20" />
+        <path d="M16 10v10" />
+        <path d="M16 20h2" />
+      </svg>
+    );
+  }
+
   const Icon = icons[name] ?? Circle;
 
   return <Icon className={className} aria-hidden="true" />;

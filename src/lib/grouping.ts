@@ -1,4 +1,5 @@
 import { categories } from "../data/categories";
+import { getFeaturedMainStatistic } from "./discovery";
 import type { Category, Statistic } from "../types/statistic";
 
 const highlightIds = [
@@ -10,8 +11,7 @@ const highlightIds = [
 
 export function getFeaturedStatistic(statistics: Statistic[]): Statistic | null {
   return (
-    statistics.find((statistic) => statistic.id === "people-born") ??
-    statistics.find((statistic) => statistic.dataMode === "live") ??
+    getFeaturedMainStatistic(statistics) ??
     statistics[0] ??
     null
   );
