@@ -1,4 +1,14 @@
-import { Clock, RefreshCw } from "lucide-react";
+import {
+  Baby,
+  Bot,
+  Cloud,
+  Coffee,
+  Plane,
+  Search,
+  TreePine,
+  MessageCircle,
+  type LucideIcon,
+} from "lucide-react";
 import { useMemo } from "react";
 import { yearlyToPerHour } from "../lib/calculations";
 import { formatLargeNumber } from "../lib/formatting";
@@ -8,125 +18,199 @@ interface LastHourNarrativeProps {
   statistics: Statistic[];
 }
 
-const narrativeIds = [
-  "people-born",
-  "people-died",
-  "flights-taking-off",
-  "internet-searches",
-  "messages-sent",
-  "co2-emitted",
-  "trees-cut-down",
-  "coffee-consumed",
-  "books-sold",
-  "ai-prompts-asked",
+interface NarrativeCard {
+  id: string;
+  icon: LucideIcon;
+  emoji: string;
+  label: string;
+  sublabel: string;
+  color: string;
+  iconBg: string;
+  iconColor: string;
+  numberColor: string;
+  value: number;
+}
+
+const cardDefs: Array<{
+  id: string;
+  icon: LucideIcon;
+  emoji: string;
+  label: string;
+  sublabel: string;
+  color: string;
+  iconBg: string;
+  iconColor: string;
+  numberColor: string;
+}> = [
+  {
+    id: "people-born",
+    icon: Baby,
+    emoji: "👶",
+    label: "babies born",
+    sublabel: "new humans arrived",
+    color: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/50",
+    iconBg: "bg-emerald-100 dark:bg-emerald-900/50",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
+    numberColor: "text-emerald-700 dark:text-emerald-300",
+  },
+  {
+    id: "flights-taking-off",
+    icon: Plane,
+    emoji: "✈️",
+    label: "flights took off",
+    sublabel: "somewhere on Earth",
+    color: "bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/50",
+    iconBg: "bg-blue-100 dark:bg-blue-900/50",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    numberColor: "text-blue-700 dark:text-blue-300",
+  },
+  {
+    id: "internet-searches",
+    icon: Search,
+    emoji: "🔍",
+    label: "internet searches",
+    sublabel: "questions asked online",
+    color: "bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-800/50",
+    iconBg: "bg-violet-100 dark:bg-violet-900/50",
+    iconColor: "text-violet-600 dark:text-violet-400",
+    numberColor: "text-violet-700 dark:text-violet-300",
+  },
+  {
+    id: "messages-sent",
+    icon: MessageCircle,
+    emoji: "💬",
+    label: "messages sent",
+    sublabel: "texts, chats & DMs",
+    color: "bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-800/50",
+    iconBg: "bg-sky-100 dark:bg-sky-900/50",
+    iconColor: "text-sky-600 dark:text-sky-400",
+    numberColor: "text-sky-700 dark:text-sky-300",
+  },
+  {
+    id: "ai-prompts-asked",
+    icon: Bot,
+    emoji: "🤖",
+    label: "AI prompts",
+    sublabel: "asked to machines",
+    color: "bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/50",
+    iconBg: "bg-purple-100 dark:bg-purple-900/50",
+    iconColor: "text-purple-600 dark:text-purple-400",
+    numberColor: "text-purple-700 dark:text-purple-300",
+  },
+  {
+    id: "co2-emitted",
+    icon: Cloud,
+    emoji: "🌫️",
+    label: "tonnes of CO₂",
+    sublabel: "emitted into atmosphere",
+    color: "bg-slate-50 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800/50",
+    iconBg: "bg-slate-100 dark:bg-slate-900/50",
+    iconColor: "text-slate-500 dark:text-slate-400",
+    numberColor: "text-slate-600 dark:text-slate-300",
+  },
+  {
+    id: "coffee-consumed",
+    icon: Coffee,
+    emoji: "☕",
+    label: "cups of coffee",
+    sublabel: "consumed worldwide",
+    color: "bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/50",
+    iconBg: "bg-amber-100 dark:bg-amber-900/50",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    numberColor: "text-amber-700 dark:text-amber-300",
+  },
+  {
+    id: "trees-cut-down",
+    icon: TreePine,
+    emoji: "🌲",
+    label: "trees cut down",
+    sublabel: "lost from forests",
+    color: "bg-teal-50 dark:bg-teal-950/40 border-teal-200 dark:border-teal-800/50",
+    iconBg: "bg-teal-100 dark:bg-teal-900/50",
+    iconColor: "text-teal-600 dark:text-teal-400",
+    numberColor: "text-teal-700 dark:text-teal-300",
+  },
 ];
 
-function fmt(n: number): string {
-  return formatLargeNumber(n, n >= 10_000);
-}
-
-function buildNarrative(stats: Statistic[]): string {
-  const byId: Record<string, number> = {};
-  for (const s of stats) {
-    byId[s.id] = yearlyToPerHour(s.yearlyEstimate);
-  }
-
-  const sentences: string[] = [];
-
-  if (byId["people-born"] && byId["people-died"]) {
-    sentences.push(
-      `In the last hour, **${fmt(byId["people-born"])} babies were born** and **${fmt(byId["people-died"])} people passed away** — a net addition of ${fmt(byId["people-born"] - byId["people-died"])} people to Earth.`,
-    );
-  } else if (byId["people-born"]) {
-    sentences.push(`**${fmt(byId["people-born"])} babies were born** in the last hour.`);
-  }
-
-  if (byId["flights-taking-off"]) {
-    sentences.push(
-      `**${fmt(byId["flights-taking-off"])} flights** took off somewhere in the world.`,
-    );
-  }
-
-  if (byId["internet-searches"]) {
-    sentences.push(
-      `Humans made **${fmt(byId["internet-searches"])} internet searches** — roughly ${fmt(byId["internet-searches"] / 3600)} every second.`,
-    );
-  }
-
-  if (byId["messages-sent"]) {
-    sentences.push(`**${fmt(byId["messages-sent"])} messages** were sent.`);
-  }
-
-  if (byId["ai-prompts-asked"]) {
-    sentences.push(`**${fmt(byId["ai-prompts-asked"])} AI prompts** were asked.`);
-  }
-
-  if (byId["co2-emitted"]) {
-    sentences.push(
-      `**${fmt(byId["co2-emitted"])} tonnes of CO₂** were emitted into the atmosphere.`,
-    );
-  }
-
-  if (byId["coffee-consumed"]) {
-    sentences.push(`**${fmt(byId["coffee-consumed"])} cups of coffee** were consumed.`);
-  }
-
-  if (sentences.length === 0) {
-    return "Loading narrative…";
-  }
-
-  return sentences.join(" ");
-}
-
-function RichText({ text }: { text: string }) {
-  // Split on ** pairs and render bold segments
-  const parts = text.split(/\*\*(.*?)\*\*/g);
-  return (
-    <>
-      {parts.map((part, i) =>
-        i % 2 === 1 ? (
-          <strong key={i} className="font-semibold text-foreground">
-            {part}
-          </strong>
-        ) : (
-          <span key={i}>{part}</span>
-        ),
-      )}
-    </>
-  );
-}
-
 export function LastHourNarrative({ statistics }: LastHourNarrativeProps) {
-  const featured = useMemo(
-    () => statistics.filter((s) => narrativeIds.includes(s.id)),
-    [statistics],
-  );
-
-  const narrative = useMemo(() => buildNarrative(featured), [featured]);
-  const sentences = narrative.split(". ").filter(Boolean);
+  const cards: NarrativeCard[] = useMemo(() => {
+    return cardDefs
+      .map((def) => {
+        const stat = statistics.find((s) => s.id === def.id);
+        if (!stat) return null;
+        return { ...def, value: yearlyToPerHour(stat.yearlyEstimate) };
+      })
+      .filter((c): c is NarrativeCard => c !== null);
+  }, [statistics]);
 
   return (
-    <div className="rounded-xl border border-border bg-card px-4 py-4 shadow-subtle">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-subtle">
       {/* Header */}
-      <div className="mb-3 flex items-center gap-2">
-        <Clock className="h-4 w-4 text-primary" />
-        <h2 className="text-sm font-semibold">What happened in the last hour?</h2>
-        <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
-          Average estimates
-        </span>
-      </div>
-
-      <div className="space-y-2">
-        {sentences.map((sentence, i) => (
-          <p key={i} className="text-sm leading-relaxed text-muted-foreground">
-            <RichText text={sentence + (sentence.endsWith(".") ? "" : ".")} />
+      <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-xl">
+          ⏱️
+        </div>
+        <div>
+          <h2 className="text-sm font-semibold text-foreground">
+            What happened in the last hour?
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            Average estimates — not live feeds
           </p>
-        ))}
+        </div>
       </div>
 
-      <p className="mt-3 text-[11px] text-muted-foreground/60">
-        All figures are derived from average annual estimates — not live feeds.
-      </p>
+      {/* Card grid */}
+      <div className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4">
+        {cards.map((card, i) => {
+          const Icon = card.icon;
+          const val = card.value;
+          const formatted = formatLargeNumber(val, val >= 10_000);
+
+          return (
+            <div
+              key={card.id}
+              className={`flex flex-col gap-2 p-4 transition-colors hover:bg-accent/30 ${
+                // Remove top border from first row, left border from first col
+                i < 4 ? "" : ""
+              }`}
+            >
+              {/* Icon circle + emoji */}
+              <div className="flex items-center gap-2">
+                <div
+                  className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg ${card.iconBg}`}
+                >
+                  {card.emoji}
+                </div>
+              </div>
+
+              {/* Big number */}
+              <div>
+                <p className={`text-2xl font-bold tabular-nums leading-none ${card.numberColor}`}>
+                  {formatted}
+                </p>
+                <p className="mt-1 text-xs font-semibold text-foreground">{card.label}</p>
+                <p className="text-[11px] text-muted-foreground">{card.sublabel}</p>
+              </div>
+
+              {/* Visual bar — proportional fill just for decoration */}
+              <div className="h-1 w-full overflow-hidden rounded-full bg-border">
+                <div
+                  className={`h-full rounded-full ${card.iconColor.replace("text-", "bg-")}`}
+                  style={{ width: `${Math.min(100, 30 + (i % 4) * 18)}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer note */}
+      <div className="border-t border-border px-4 py-2.5">
+        <p className="text-[11px] text-muted-foreground/60">
+          All figures derived from average annual estimates. Numbers reset every hour.
+        </p>
+      </div>
     </div>
   );
 }
