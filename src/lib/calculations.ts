@@ -1,4 +1,4 @@
-import type { Statistic, TimeScale } from "../types/statistic";
+import type { ConfidenceInterval, Statistic, TimeScale } from "../types/statistic";
 
 export const DAYS_PER_YEAR = 365.2425;
 export const HOURS_PER_DAY = 24;
@@ -72,4 +72,47 @@ export function getStatisticRateForScale(
   }
 
   return getRateForScale(statistic.yearlyEstimate, scale);
+}
+
+export interface RateRange {
+  low: number;
+  mid: number;
+  high: number;
+}
+
+export function getRateRangeForScale(
+  yearlyEstimate: number,
+  interval: ConfidenceInterval,
+  scale: TimeScale,
+): RateRange {
+  return {
+    low: getRateForScale(interval.low, scale),
+    mid: getRateForScale(yearlyEstimate, scale),
+    high: getRateForScale(interval.high, scale),
+  };
+}
+
+/** Returns cumulative "since opened" totals as a range */
+export function getSinceOpenedRange(
+  yearlyEstimate: number,
+  interval: ConfidenceInterval,
+  openedAt: number,
+  now = Date.now(),
+): { low: number; mid: number; high: number } {
+  const elapsedSeconds = Math.max(0, (now - openedAt) / 1000);
+  return {
+    low: yearlyToPerSecond(interval.low) * elapsedSeconds,
+    mid: yearlyToPerSecond(yearlyEstimate) * elapsedSeconds,
+    high: yearlyToPerSecond(interval.high) * elapsedSeconds,
+  };
+}
+
+/** Cumulative count since a birth year */
+export function calculateSinceBorn(
+  yearlyEstimate: number,
+  birthYear: number,
+): number {
+  const now = new Date();
+  const yearsElapsed = now.getFullYear() - birthYear + now.getMonth() / 12;
+  return yearlyEstimate * Math.max(0, yearsElapsed);
 }
