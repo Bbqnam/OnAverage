@@ -93,6 +93,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["population", "growth", "demographics", "net change"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "people were added to the global population",
+    historicalChange: { yearsAgo: 10, percentChange: -14, label: "10 years ago" },
   },
   {
     id: "people-waking-up",
@@ -255,6 +256,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["flight", "air travel", "aviation", "takeoff", "icao"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "flights took off",
+    historicalChange: { yearsAgo: 10, percentChange: +38, label: "10 years ago" },
   },
   {
     id: "flights-landing",
@@ -321,6 +323,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["cars", "vehicles", "production", "manufacturing", "travel"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "vehicles were produced",
+    historicalChange: { yearsAgo: 10, percentChange: +22, label: "10 years ago" },
   },
   {
     id: "road-accidents",
@@ -573,6 +576,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["search", "internet", "google", "questions", "technology", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "searches happened",
+    historicalChange: { yearsAgo: 10, percentChange: +62, label: "10 years ago" },
     contextNote:
       "Search companies do not publish exact live global query counts, so this app treats the number as directional.",
   },
@@ -619,6 +623,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["messages", "chat", "texting", "communication", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "messages were sent",
+    historicalChange: { yearsAgo: 10, percentChange: +210, label: "10 years ago" },
   },
   {
     id: "videos-watched",
@@ -641,6 +646,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["video", "streaming", "youtube", "tiktok", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "videos were watched",
+    historicalChange: { yearsAgo: 10, percentChange: +340, label: "10 years ago" },
   },
   {
     id: "apps-downloaded",
@@ -707,6 +713,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["ai", "prompts", "chatbot", "technology", "playful", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "AI prompts were asked",
+    historicalChange: { yearsAgo: 3, percentChange: +4800, label: "3 years ago" },
   },
   {
     id: "card-payments-made",
@@ -729,6 +736,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["payments", "cards", "finance", "money"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "card payments were made",
+    historicalChange: { yearsAgo: 10, percentChange: +95, label: "10 years ago" },
   },
   {
     id: "online-purchases",
@@ -751,6 +759,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["shopping", "ecommerce", "orders", "money", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "online purchases were placed",
+    historicalChange: { yearsAgo: 10, percentChange: +180, label: "10 years ago" },
   },
   {
     id: "personal-bankruptcies",
@@ -1019,6 +1028,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["co2", "carbon", "climate", "environment"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "metric tons of CO₂ were emitted",
+    historicalChange: { yearsAgo: 10, percentChange: +9, label: "10 years ago" },
     contextNote:
       "Emissions estimates vary by scope and publication year. This seed value is rounded for the MVP.",
   },
@@ -1043,6 +1053,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["trees", "forest", "environment", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "trees were cut down",
+    historicalChange: { yearsAgo: 10, percentChange: -5, label: "10 years ago" },
   },
   {
     id: "trees-planted",
@@ -1131,6 +1142,7 @@ export const globalStatistics: Statistic[] = [
     tags: ["renewable", "energy", "electricity", "environment"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "kWh of renewable energy were generated",
+    historicalChange: { yearsAgo: 10, percentChange: +165, label: "10 years ago" },
   },
   {
     id: "freshwater-withdrawn",
