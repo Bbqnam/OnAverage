@@ -170,35 +170,18 @@ export function LastHourNarrative({ statistics }: LastHourNarrativeProps) {
           return (
             <div
               key={card.id}
-              className={`flex flex-col gap-2 p-4 transition-colors hover:bg-accent/30 ${
-                // Remove top border from first row, left border from first col
-                i < 4 ? "" : ""
-              }`}
+              className="flex flex-col gap-1.5 p-3 transition-colors hover:bg-accent/30"
             >
-              {/* Icon circle + emoji */}
-              <div className="flex items-center gap-2">
-                <div
-                  className={`flex h-9 w-9 items-center justify-center rounded-xl text-lg ${card.iconBg}`}
-                >
-                  {card.emoji}
-                </div>
-              </div>
+              {/* Emoji */}
+              <span className="text-xl leading-none">{card.emoji}</span>
 
-              {/* Big number */}
+              {/* Number + labels */}
               <div>
-                <p className={`text-2xl font-bold tabular-nums leading-none ${card.numberColor}`}>
+                <p className={`text-xl font-bold tabular-nums leading-none ${card.numberColor}`}>
                   {formatted}
                 </p>
-                <p className="mt-1 text-xs font-semibold text-foreground">{card.label}</p>
+                <p className="mt-0.5 text-xs font-semibold text-foreground">{card.label}</p>
                 <p className="text-[11px] text-muted-foreground">{card.sublabel}</p>
-              </div>
-
-              {/* Visual bar — proportional fill just for decoration */}
-              <div className="h-1 w-full overflow-hidden rounded-full bg-border">
-                <div
-                  className={`h-full rounded-full ${card.iconColor.replace("text-", "bg-")}`}
-                  style={{ width: `${Math.min(100, 30 + (i % 4) * 18)}%` }}
-                />
               </div>
             </div>
           );
