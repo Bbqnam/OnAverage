@@ -73,25 +73,18 @@ export function MyWorldPanel({
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {myWorldStats.map((stat) => (
-              <div key={stat.id} className="relative">
-                <StatCard
-                  statistic={stat}
-                  openedAt={openedAt}
-                  now={now}
-                  timeScale={timeScale}
-                  isFavorite={favorites.includes(stat.id)}
-                  onOpen={onOpen}
-                  onToggleFavorite={onToggleFavorite}
-                />
-                <button
-                  type="button"
-                  onClick={() => onToggleMyWorld(stat.id)}
-                  title="Remove from My World"
-                  className="absolute bottom-2 right-2 z-10 rounded-full bg-muted p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover:opacity-100 focus:opacity-100"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
+              <StatCard
+                key={stat.id}
+                statistic={stat}
+                openedAt={openedAt}
+                now={now}
+                timeScale={timeScale}
+                isFavorite={favorites.includes(stat.id)}
+                isInMyWorld
+                onOpen={onOpen}
+                onToggleFavorite={onToggleFavorite}
+                onToggleMyWorld={onToggleMyWorld}
+              />
             ))}
           </div>
         )}
@@ -114,8 +107,10 @@ export function MyWorldPanel({
                   now={now}
                   timeScale={timeScale}
                   isFavorite
+                  isInMyWorld={myWorldIds.includes(stat.id)}
                   onOpen={onOpen}
                   onToggleFavorite={onToggleFavorite}
+                  onToggleMyWorld={onToggleMyWorld}
                 />
               ))}
             </div>

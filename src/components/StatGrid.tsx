@@ -72,8 +72,10 @@ export function StatGrid({
         isHighlighted={highlightedStatisticId === statistic.id}
         showCategory={showCat}
         isFavorite={favorites.includes(statistic.id)}
+        isInMyWorld={myWorldIds.includes(statistic.id)}
         onOpen={onOpenStatistic}
         onToggleFavorite={onToggleFavorite}
+        onToggleMyWorld={onToggleMyWorld}
       />
     );
   }

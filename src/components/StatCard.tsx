@@ -1,4 +1,4 @@
-import { Star, TrendingDown, TrendingUp } from "lucide-react";
+import { Check, Plus, Star, TrendingDown, TrendingUp } from "lucide-react";
 import { calculateSincePageLoad, getRateForScale, getRateRangeForScale } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { StatIcon } from "./StatIcon";
@@ -13,8 +13,10 @@ interface StatCardProps {
   isHighlighted?: boolean;
   showCategory?: boolean;
   isFavorite?: boolean;
+  isInMyWorld?: boolean;
   onOpen: (statistic: Statistic) => void;
   onToggleFavorite?: (id: string) => void;
+  onToggleMyWorld?: (id: string) => void;
 }
 
 export function StatCard({
@@ -25,8 +27,10 @@ export function StatCard({
   isHighlighted = false,
   showCategory = true,
   isFavorite = false,
+  isInMyWorld = false,
   onOpen,
   onToggleFavorite,
+  onToggleMyWorld,
 }: StatCardProps) {
   const sinceOpened = calculateSincePageLoad(statistic.yearlyEstimate, openedAt, now);
   const selectedRate = getRateForScale(statistic.yearlyEstimate, timeScale);
@@ -55,20 +59,45 @@ export function StatCard({
         isHighlighted ? "ring-2 ring-primary/30" : ""
       }`}
     >
-      {/* Favorite star — only button on the card */}
-      {onToggleFavorite && (
-        <button
-          type="button"
-          onClick={(e) => { e.stopPropagation(); onToggleFavorite(statistic.id); }}
-          aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-          className={`absolute right-2 top-2 z-10 rounded-full p-0.5 transition-opacity ${
-            isFavorite
-              ? "text-amber-400 opacity-100"
-              : "text-muted-foreground opacity-0 group-hover:opacity-60 hover:!opacity-100"
-          }`}
-        >
-          <Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} />
-        </button>
+      {(onToggleFavorite || onToggleMyWorld) && (
+        <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
+          {onToggleMyWorld && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleMyWorld(statistic.id);
+              }}
+              aria-label={isInMyWorld ? "Remove from My World" : "Add to My World"}
+              title={isInMyWorld ? "Remove from My World" : "Add to My World"}
+              className={`rounded-full border p-0.5 transition ${
+                isInMyWorld
+                  ? "border-primary/30 bg-primary/10 text-primary opacity-100"
+                  : "border-transparent bg-background/80 text-muted-foreground opacity-0 shadow-sm hover:text-foreground group-hover:opacity-100"
+              }`}
+            >
+              {isInMyWorld ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+            </button>
+          )}
+          {onToggleFavorite && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleFavorite(statistic.id);
+              }}
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              className={`rounded-full border p-0.5 transition ${
+                isFavorite
+                  ? "border-amber-400/30 bg-amber-400/10 text-amber-500 opacity-100"
+                  : "border-transparent bg-background/80 text-muted-foreground opacity-0 shadow-sm hover:text-foreground group-hover:opacity-100"
+              }`}
+            >
+              <Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} />
+            </button>
+          )}
+        </div>
       )}
 
       {/* Header */}
