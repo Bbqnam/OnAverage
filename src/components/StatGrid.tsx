@@ -1,4 +1,4 @@
-import { Hourglass, Plus, X } from "lucide-react";
+import { Hourglass } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { getHighlightStatistics, groupStatisticsByCategory } from "../lib/grouping";
@@ -63,47 +63,18 @@ export function StatGrid({
 
   function renderCard(statistic: Statistic, showCat: boolean) {
     return (
-      <div key={statistic.id} className="group/card relative">
-        <StatCard
-          statistic={statistic}
-          openedAt={openedAt}
-          now={now}
-          timeScale={timeScale}
-          isHighlighted={highlightedStatisticId === statistic.id}
-          showCategory={showCat}
-          isFavorite={favorites.includes(statistic.id)}
-          onOpen={onOpenStatistic}
-          onToggleFavorite={onToggleFavorite}
-        />
-        {/* Add to My World button */}
-        {onToggleMyWorld && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleMyWorld(statistic.id);
-            }}
-            title={myWorldIds.includes(statistic.id) ? "Remove from My World" : "Add to My World"}
-            className={`absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition-opacity ${
-              myWorldIds.includes(statistic.id)
-                ? "border-primary/30 bg-primary/10 text-primary opacity-100"
-                : "border-border bg-background text-muted-foreground opacity-0 group-hover/card:opacity-80 hover:!opacity-100"
-            }`}
-          >
-            {myWorldIds.includes(statistic.id) ? (
-              <>
-                <X className="h-2.5 w-2.5" />
-                My World
-              </>
-            ) : (
-              <>
-                <Plus className="h-2.5 w-2.5" />
-                My World
-              </>
-            )}
-          </button>
-        )}
-      </div>
+      <StatCard
+        key={statistic.id}
+        statistic={statistic}
+        openedAt={openedAt}
+        now={now}
+        timeScale={timeScale}
+        isHighlighted={highlightedStatisticId === statistic.id}
+        showCategory={showCat}
+        isFavorite={favorites.includes(statistic.id)}
+        onOpen={onOpenStatistic}
+        onToggleFavorite={onToggleFavorite}
+      />
     );
   }
 
