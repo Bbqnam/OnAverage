@@ -887,6 +887,11 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
             ) : (
               <p className="line-clamp-2 text-xs font-medium">{statistic.sourceName}</p>
             )}
+            {statistic.sourceYear && (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Based on {statistic.sourceYear} data
+              </p>
+            )}
           </div>
 
           {/* Confidence */}
@@ -902,20 +907,70 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
             </p>
           </div>
 
-          {/* Yearly seed */}
+          {/* Yearly seed + confidence interval */}
           <div className="rounded-xl border border-border bg-background/70 p-3">
             <div className="mb-1 flex items-center gap-1.5">
               <Sprout className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                Yearly seed
+                Yearly estimate
               </p>
             </div>
             <p className="text-lg font-semibold tabular-nums">
               {formatLargeNumber(statistic.yearlyEstimate, true)}
             </p>
             <p className="text-xs text-muted-foreground">{statistic.unit}</p>
+            {statistic.confidenceInterval && (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Range:{" "}
+                <span className="font-medium tabular-nums">
+                  {formatLargeNumber(statistic.confidenceInterval.low, true)}–
+                  {formatLargeNumber(statistic.confidenceInterval.high, true)}
+                </span>
+              </p>
+            )}
           </div>
         </div>
+
+        {/* Historical change */}
+        {statistic.historicalChange && (
+          <div className="mt-3 rounded-xl border border-border bg-background/70 p-3">
+            <div className="flex items-center gap-2">
+              <Timer className="h-3.5 w-3.5 text-muted-foreground" />
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Historical context
+              </p>
+            </div>
+            <p className="mt-1.5 text-sm text-foreground">
+              This rate is{" "}
+              <span
+                className={
+                  statistic.historicalChange.percentChange >= 0
+                    ? "font-semibold text-emerald-600 dark:text-emerald-400"
+                    : "font-semibold text-rose-600 dark:text-rose-400"
+                }
+              >
+                {statistic.historicalChange.percentChange >= 0 ? "+" : ""}
+                {statistic.historicalChange.percentChange}%
+              </span>{" "}
+              compared to {statistic.historicalChange.label}.
+            </p>
+          </div>
+        )}
+
+        {/* Surprise fact */}
+        {statistic.surpriseFact && (
+          <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+            <div className="flex items-center gap-2">
+              <span className="text-base">💡</span>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
+                Did you know?
+              </p>
+            </div>
+            <p className="mt-1.5 text-sm leading-5 text-foreground">
+              {statistic.surpriseFact}
+            </p>
+          </div>
+        )}
 
         {/* Methodology — collapsed by default */}
         <div className="mt-3 overflow-hidden rounded-xl border border-border">
