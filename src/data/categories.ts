@@ -15,6 +15,10 @@ export const categories: Category[] = [
   "Society",
   "Fun",
   "Events",
+  "Health",
+  "Education",
+  "Internet",
+  "Food",
 ];
 
 export const dashboardTabs: DashboardTab[] = ["All", ...categories];
