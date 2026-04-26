@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { StatIcon } from "./StatIcon";
 import { DataModeBadge } from "./DataModeBadge";
 import { ConfidenceBadge } from "./ConfidenceBadge";
-import { calculateSincePageLoad, getRateForScale } from "../lib/calculations";
+import { getRateForScale } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
+import { getDisplayedConfidence } from "../lib/confidence";
+import { getCumulativeValue, getTimelineLabel } from "../lib/timeline";
 import { formatLargeNumber, formatRate } from "../lib/formatting";
 import type { Statistic, TimeScale } from "../types/statistic";
 
@@ -32,8 +34,14 @@ function uniqueStats(stats: Statistic[]) {
   );
 }
 
-function getDisplayValue(statistic: Statistic, openedAt: number, now: number) {
-  return calculateSincePageLoad(statistic.yearlyEstimate, openedAt, now);
+function getTimelineDisplay(statistic: Statistic, openedAt: number, now: number) {
+  const selectedStartDate = new Date(openedAt);
+  const currentDate = new Date(now);
+
+  return {
+    cumulative: getCumulativeValue(statistic, selectedStartDate, currentDate),
+    timelineLabel: getTimelineLabel(statistic, selectedStartDate, currentDate),
+  };
 }
 
 function getRateText(statistic: Statistic, timeScale: TimeScale) {
@@ -78,9 +86,11 @@ export function FeaturedStatCard({
         : [statistic, ...supportingStatistics];
 
     return uniqueStats(basePool).filter(
-      (poolStatistic) => !HERO_EXCLUDED_IDS.has(poolStatistic.id),
+      (poolStatistic) =>
+        !HERO_EXCLUDED_IDS.has(poolStatistic.id) &&
+        !getCumulativeValue(poolStatistic, new Date(openedAt)).isUnavailable,
     );
-  }, [rotationStatistics, statistic, supportingStatistics]);
+  }, [openedAt, rotationStatistics, statistic, supportingStatistics]);
 
   const [dashboardStats, setDashboardStats] = useState(() =>
     createDashboardStats(randomPool, statistic),
@@ -102,7 +112,8 @@ export function FeaturedStatCard({
 
   const activeStatistic = dashboardStats.main;
   const categoryStyle = getCategoryStyle(activeStatistic.category);
-  const displayValue = getDisplayValue(activeStatistic, openedAt, now);
+  const { cumulative, timelineLabel } = getTimelineDisplay(activeStatistic, openedAt, now);
+  const displayedConfidence = getDisplayedConfidence(activeStatistic);
 
   return (
     <section
@@ -136,13 +147,30 @@ export function FeaturedStatCard({
 
           <div className="col-span-2 min-w-0 text-left sm:col-span-1 sm:text-right">
             <p className="text-2xl font-semibold tabular-nums leading-none text-foreground/90">
-              {formatLargeNumber(displayValue, displayValue >= 100_000)}
+              {cumulative.isUnavailable
+                ? "—"
+                : formatLargeNumber(cumulative.value, cumulative.value >= 100_000)}
             </p>
+            {cumulative.isUnavailable ? (
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                Not available before {activeStatistic.startYear}
+              </p>
+            ) : timelineLabel ? (
+              <p
+                className={`mt-0.5 text-[11px] ${categoryStyle.text} opacity-60`}
+                title={`This metric is only counted from when it realistically became available (${activeStatistic.startYear})`}
+              >
+                {timelineLabel}
+              </p>
+            ) : null}
             <p className="mt-0.5 text-xs text-muted-foreground">
               {getRateText(activeStatistic, timeScale)}
             </p>
             <div className="mt-1 flex justify-start gap-1.5 sm:justify-end">
-              <ConfidenceBadge confidence={activeStatistic.confidence} />
+              <ConfidenceBadge
+                confidence={displayedConfidence.confidence}
+                title={displayedConfidence.tooltip}
+              />
               <DataModeBadge dataMode={activeStatistic.dataMode} />
             </div>
           </div>
@@ -183,13 +211,15 @@ function SupportingStatButton({
   onOpen,
 }: SupportingStatButtonProps) {
   const categoryStyle = getCategoryStyle(statistic.category);
-  const displayValue = getDisplayValue(statistic, openedAt, now);
+  const { cumulative, timelineLabel } = getTimelineDisplay(statistic, openedAt, now);
 
   return (
     <button
       type="button"
       onClick={() => onOpen(statistic)}
-      className="flex min-w-0 items-center gap-2 rounded-md border border-border/70 bg-background/50 px-2 py-1.5 text-left transition hover:bg-accent"
+      className={`flex min-w-0 items-center gap-2 rounded-md border border-border/70 bg-background/50 px-2 py-1.5 text-left transition hover:bg-accent ${
+        cumulative.isUnavailable ? "opacity-40 grayscale" : ""
+      }`}
       aria-label={`Open ${statistic.title} details`}
     >
       <div
@@ -203,8 +233,22 @@ function SupportingStatButton({
           {statistic.shortTitle}
         </p>
         <p className="truncate text-sm font-semibold tabular-nums text-foreground">
-          {formatLargeNumber(displayValue, displayValue >= 100_000)}
+          {cumulative.isUnavailable
+            ? "—"
+            : formatLargeNumber(cumulative.value, cumulative.value >= 100_000)}
         </p>
+        {cumulative.isUnavailable ? (
+          <p className="truncate text-[11px] text-muted-foreground">
+            Not available before {statistic.startYear}
+          </p>
+        ) : timelineLabel ? (
+          <p
+            className={`truncate text-[11px] ${categoryStyle.text} opacity-60`}
+            title={`This metric is only counted from when it realistically became available (${statistic.startYear})`}
+          >
+            {timelineLabel}
+          </p>
+        ) : null}
         <p className="truncate text-[11px] text-muted-foreground">
           {getRateText(statistic, timeScale)}
         </p>

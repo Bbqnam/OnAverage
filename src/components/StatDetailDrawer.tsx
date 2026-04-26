@@ -10,11 +10,14 @@ import {
   Timer,
   X,
 } from "lucide-react";
-import { useEffect, useRef, useState, type Ref } from "react";
+import { useEffect, useMemo, useRef, useState, type PointerEvent, type Ref } from "react";
 import { ConfidenceBadge } from "./ConfidenceBadge";
 import { DataModeBadge } from "./DataModeBadge";
 import { StatIcon } from "./StatIcon";
 import { getCategoryStyle } from "../lib/categoryStyles";
+import { getDisplayedConfidence } from "../lib/confidence";
+import { getHistoricalChange } from "../lib/historical";
+import { getFilteredHistoricalData } from "../lib/timeline";
 import {
   yearlyToPerDay,
   yearlyToPerHour,
@@ -22,7 +25,7 @@ import {
   yearlyToPerSecond,
 } from "../lib/calculations";
 import { formatLargeNumber } from "../lib/formatting";
-import type { Statistic } from "../types/statistic";
+import type { Category, Confidence, SourceTier, Statistic } from "../types/statistic";
 
 interface StatDetailDrawerProps {
   statistic: Statistic | null;
@@ -413,13 +416,325 @@ function node(
   return { x, y, icon, shape, opacity };
 }
 
-function confidenceLabel(statistic: Statistic): string {
-  if (statistic.confidence === "high") return "Based on a strong institutional data series";
-  if (statistic.confidence === "medium")
+const categoryAccentColors: Record<Category, string> = {
+  Life: "#10b981",
+  Travel: "#3b82f6",
+  Work: "#64748b",
+  Technology: "#8b5cf6",
+  Money: "#f59e0b",
+  Environment: "#14b8a6",
+  Society: "#71717a",
+  Health: "#f87171",
+  Education: "#6366f1",
+  Internet: "#06b6d4",
+  Food: "#f97316",
+  Fun: "#ec4899",
+  Events: "#f43f5e",
+};
+
+const sourceTierBadgeStyles: Record<SourceTier, { label: string; className: string }> = {
+  official: {
+    label: "Official source",
+    className: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  },
+  industry: {
+    label: "Industry estimate",
+    className: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  },
+  estimated: {
+    label: "Modeled estimate",
+    className: "border-muted bg-muted text-muted-foreground",
+  },
+};
+
+function SourceTierBadge({ sourceTier }: { sourceTier: SourceTier }) {
+  const style = sourceTierBadgeStyles[sourceTier];
+
+  return (
+    <span
+      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${style.className}`}
+    >
+      {style.label}
+    </span>
+  );
+}
+
+function confidenceLabel(statistic: Statistic, displayedConfidence: Confidence): string {
+  if (statistic.sourceTier === "estimated" && statistic.confidence === "high") {
+    return "Displayed confidence is capped at Medium because this signal has no official source.";
+  }
+
+  if (displayedConfidence === "high") return "Based on a strong institutional data series";
+  if (displayedConfidence === "medium")
     return "Grounded in public reporting, may be rounded";
   return statistic.isFuzzyEstimate
     ? "Directional or playful estimate — useful for curiosity"
     : "Source coverage is incomplete or not globally standardized";
+}
+
+interface SparklinePoint {
+  year: number;
+  value: number;
+  x: number;
+  y: number;
+}
+
+const sparklineWidth = 640;
+const sparklineHeight = 120;
+const sparklineTop = 14;
+const sparklineBottom = 100;
+const sparklineLeft = 8;
+const sparklineRight = 620;
+
+function buildSmoothPath(points: SparklinePoint[]): string {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+
+  const commands = [`M ${points[0].x} ${points[0].y}`];
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const p0 = points[index - 1] ?? points[index];
+    const p1 = points[index];
+    const p2 = points[index + 1];
+    const p3 = points[index + 2] ?? p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    commands.push(`C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`);
+  }
+
+  return commands.join(" ");
+}
+
+function getTooltipChange(firstValue: number, currentValue: number, firstYear: number): string {
+  if (firstValue <= 0) {
+    return `New since ${firstYear}`;
+  }
+
+  const change = ((currentValue - firstValue) / firstValue) * 100;
+  return `${change >= 0 ? "+" : ""}${Math.round(change)}% vs ${firstYear}`;
+}
+
+function StatSparklineHero({ statistic }: { statistic: Statistic }) {
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+
+  const chart = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const axisStartYear = Math.max(statistic.startYear, currentYear - 9);
+    const filtered = getFilteredHistoricalData(statistic, currentYear - 9)
+      .filter((point) => point.year <= currentYear)
+      .sort((a, b) => a.year - b.year);
+
+    if (filtered.length < 3) {
+      return null;
+    }
+
+    const last = filtered[filtered.length - 1];
+    const series = last.year < currentYear
+      ? [
+          ...filtered,
+          ...Array.from({ length: currentYear - last.year }, (_, index) => ({
+            year: last.year + index + 1,
+            value: last.value,
+          })),
+        ]
+      : filtered;
+
+    if (series.length < 3) {
+      return null;
+    }
+
+    const values = series.map((point) => point.value);
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+    const span = maxValue - minValue;
+    const padding = span > 0 ? span * 0.1 : Math.max(Math.abs(maxValue) * 0.1, 1);
+    const low = minValue - padding;
+    const high = maxValue + padding;
+    const range = high - low;
+    const average = values.reduce((sum, value) => sum + value, 0) / values.length;
+    const points = series.map((point) => {
+      const denominator = Math.max(currentYear - axisStartYear, 1);
+      const x =
+        sparklineLeft +
+        ((point.year - axisStartYear) / denominator) * (sparklineRight - sparklineLeft);
+      const y =
+        sparklineBottom -
+        ((point.value - low) / range) * (sparklineBottom - sparklineTop);
+
+      return { ...point, x, y };
+    });
+    const linePath = buildSmoothPath(points);
+    const fillPath = `${linePath} L ${points[points.length - 1].x} ${sparklineBottom} L ${points[0].x} ${sparklineBottom} Z`;
+    const anomalies = points.filter((point) => point.value < average * 0.7);
+    const beganInsideWindow = statistic.startYear >= currentYear - 9;
+
+    return {
+      anomalies,
+      axisStartYear,
+      beganInsideWindow,
+      currentYear,
+      fillPath,
+      linePath,
+      points,
+    };
+  }, [statistic]);
+
+  if (!chart) {
+    return <StatHeroVisual statistic={statistic} />;
+  }
+
+  const accentColor = categoryAccentColors[statistic.category];
+  const gradientId = `sparkline-gradient-${statistic.id.replace(/[^a-z0-9-]/gi, "")}`;
+  const points = chart.points;
+  const firstPoint = points[0];
+  const lastPoint = points[points.length - 1];
+  const hoverPoint = hoverIndex === null ? null : points[Math.min(hoverIndex, points.length - 1)];
+
+  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * sparklineWidth;
+    const nextIndex = points.reduce((nearestIndex, point, index) => {
+      const nearestDistance = Math.abs(points[nearestIndex].x - x);
+      const pointDistance = Math.abs(point.x - x);
+      return pointDistance < nearestDistance ? index : nearestIndex;
+    }, 0);
+
+    setHoverIndex(nextIndex);
+  }
+
+  return (
+    <div
+      className="relative mt-3 h-[120px] w-full overflow-visible"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={() => setHoverIndex(null)}
+    >
+      <svg
+        className="h-full w-full overflow-visible"
+        viewBox={`0 0 ${sparklineWidth} ${sparklineHeight}`}
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={`${statistic.title} yearly rate from ${chart.axisStartYear} to ${chart.currentYear}`}
+      >
+        <defs>
+          <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%" stopColor={accentColor} stopOpacity="0.15" />
+            <stop offset="100%" stopColor={accentColor} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <path d={chart.fillPath} fill={`url(#${gradientId})`} />
+        <path
+          d={chart.linePath}
+          fill="none"
+          stroke={accentColor}
+          strokeLinecap="round"
+          strokeWidth="3"
+        />
+        {chart.anomalies.map((point) => (
+          <text
+            key={`anomaly-${point.year}`}
+            x={point.x}
+            y={Math.max(10, point.y - 9)}
+            fill="currentColor"
+            className="text-[10px] text-muted-foreground"
+            textAnchor="middle"
+          >
+            {point.year}
+          </text>
+        ))}
+        {hoverPoint && (
+          <>
+            <line
+              x1={hoverPoint.x}
+              x2={hoverPoint.x}
+              y1={sparklineTop}
+              y2={sparklineBottom}
+              stroke="currentColor"
+              strokeDasharray="3 4"
+              strokeOpacity="0.28"
+              strokeWidth="1"
+            />
+            <circle cx={hoverPoint.x} cy={hoverPoint.y} r="4" fill={accentColor} />
+          </>
+        )}
+        {chart.beganInsideWindow && (
+          <>
+            <line
+              x1={sparklineLeft}
+              x2={sparklineLeft}
+              y1={sparklineTop}
+              y2={sparklineBottom}
+              stroke={accentColor}
+              strokeDasharray="3 4"
+              strokeOpacity="0.5"
+              strokeWidth="1"
+            />
+            <text
+              x={sparklineLeft + 6}
+              y={sparklineTop + 8}
+              fill="currentColor"
+              className="text-[10px] text-muted-foreground"
+              textAnchor="start"
+            >
+              Signal began {statistic.startYear}
+            </text>
+          </>
+        )}
+        <text
+          x={sparklineLeft}
+          y={116}
+          fill="currentColor"
+          className="text-[10px] text-muted-foreground"
+          textAnchor="start"
+        >
+          {chart.axisStartYear}
+        </text>
+        <text
+          x={sparklineRight}
+          y={116}
+          fill="currentColor"
+          className="text-[10px] text-muted-foreground"
+          textAnchor="end"
+        >
+          {chart.currentYear}
+        </text>
+      </svg>
+
+      <div
+        className="pointer-events-none absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 shadow-sm"
+        style={{
+          left: `${(lastPoint.x / sparklineWidth) * 100}%`,
+          top: `${(lastPoint.y / sparklineHeight) * 100}%`,
+          color: accentColor,
+        }}
+        aria-hidden="true"
+      >
+        <StatIcon name={statistic.icon} className="h-3.5 w-3.5" />
+      </div>
+
+      {hoverPoint && (
+        <div
+          className="pointer-events-none absolute z-20 min-w-32 rounded-md border border-border bg-popover px-2 py-1.5 text-xs text-popover-foreground shadow-md"
+          style={{
+            left: `${(hoverPoint.x / sparklineWidth) * 100}%`,
+            top: `${Math.max(4, ((hoverPoint.y - 46) / sparklineHeight) * 100)}%`,
+            transform: hoverPoint.x > sparklineWidth - 150 ? "translateX(-100%)" : "translateX(8px)",
+          }}
+        >
+          <p className="font-semibold tabular-nums">{hoverPoint.year}</p>
+          <p className="tabular-nums text-foreground">
+            {formatLargeNumber(hoverPoint.value, hoverPoint.value >= 10_000)}
+            <span className="ml-1 text-muted-foreground">{statistic.unit}</span>
+          </p>
+          <p className="text-muted-foreground">
+            {getTooltipChange(firstPoint.value, hoverPoint.value, firstPoint.year)}
+          </p>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function StatHeroVisual({ statistic }: { statistic: Statistic }) {
@@ -490,7 +805,7 @@ function StatHeroVisual({ statistic }: { statistic: Statistic }) {
 
   return (
     <div
-      className={`relative mt-3 h-24 overflow-hidden rounded-lg border ${categoryStyle.border} bg-background/65 sm:h-28`}
+      className={`relative mt-3 h-[120px] overflow-hidden rounded-lg border ${categoryStyle.border} bg-background/65`}
       aria-hidden="true"
     >
       <div className={`absolute inset-0 ${categoryStyle.iconBg}`} />
@@ -723,6 +1038,13 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
   if (!statistic) return null;
 
   const categoryStyle = getCategoryStyle(statistic.category);
+  const displayedConfidence = getDisplayedConfidence(statistic);
+  const citation = statistic.source ?? {
+    name: statistic.sourceName,
+    url: statistic.sourceUrl ?? "",
+  };
+  const dataThroughYear = statistic.dataLastUpdated ?? statistic.sourceYear;
+  const historicalChange = getHistoricalChange(statistic);
 
   const conversions = [
     {
@@ -812,8 +1134,8 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
           </button>
         </div>
 
-        {/* Hero visual — kept exactly as original */}
-        <StatHeroVisual statistic={statistic} />
+        {/* Hero visual */}
+        <StatSparklineHero statistic={statistic} />
 
         {/* Description */}
         <p className="mt-3 text-sm leading-5 text-muted-foreground">
@@ -874,22 +1196,22 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
                 Source
               </p>
             </div>
-            {statistic.sourceUrl ? (
+            {citation.url ? (
               <a
-                href={statistic.sourceUrl}
+                href={citation.url}
                 target="_blank"
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-medium text-foreground hover:underline"
               >
-                <span className="line-clamp-2">{statistic.sourceName}</span>
+                <span className="line-clamp-2">{citation.name}</span>
                 <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
               </a>
             ) : (
-              <p className="line-clamp-2 text-xs font-medium">{statistic.sourceName}</p>
+              <p className="line-clamp-2 text-xs font-medium">{citation.name}</p>
             )}
-            {statistic.sourceYear && (
+            {dataThroughYear && (
               <p className="mt-1 text-[11px] text-muted-foreground">
-                Based on {statistic.sourceYear} data
+                Data through {dataThroughYear}
               </p>
             )}
           </div>
@@ -900,10 +1222,16 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Confidence
               </p>
-              <ConfidenceBadge confidence={statistic.confidence} />
+              <div className="flex flex-wrap justify-end gap-1">
+                {statistic.sourceTier && <SourceTierBadge sourceTier={statistic.sourceTier} />}
+                <ConfidenceBadge
+                  confidence={displayedConfidence.confidence}
+                  title={displayedConfidence.tooltip}
+                />
+              </div>
             </div>
             <p className="text-xs leading-4 text-muted-foreground">
-              {confidenceLabel(statistic)}
+              {confidenceLabel(statistic, displayedConfidence.confidence)}
             </p>
           </div>
 
@@ -932,7 +1260,7 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
         </div>
 
         {/* Historical change */}
-        {statistic.historicalChange && (
+        {historicalChange && (
           <div className="mt-2.5 rounded-lg border border-border bg-background/70 p-2.5">
             <div className="flex items-center gap-2">
               <Timer className="h-3.5 w-3.5 text-muted-foreground" />
@@ -944,15 +1272,15 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
               This rate is{" "}
               <span
                 className={
-                  statistic.historicalChange.percentChange >= 0
+                  historicalChange.percentChange >= 0
                     ? "font-semibold text-emerald-600 dark:text-emerald-400"
                     : "font-semibold text-rose-600 dark:text-rose-400"
                 }
               >
-                {statistic.historicalChange.percentChange >= 0 ? "+" : ""}
-                {statistic.historicalChange.percentChange}%
+                {historicalChange.percentChange >= 0 ? "+" : ""}
+                {historicalChange.percentChange}%
               </span>{" "}
-              compared to {statistic.historicalChange.label}.
+              compared to {historicalChange.label}.
             </p>
           </div>
         )}

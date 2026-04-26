@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { Activity } from "lucide-react";
 import { DataModeBadge } from "./DataModeBadge";
 import { StatIcon } from "./StatIcon";
-import { calculateSincePageLoad } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { getSinceOpenedHighlights, type SinceOpenedMode } from "../lib/discovery";
 import { formatLargeNumber } from "../lib/formatting";
+import { getCumulativeValue, getTimelineLabel } from "../lib/timeline";
 import type { Statistic } from "../types/statistic";
 
 interface SinceOpenedExplorerProps {
@@ -80,7 +80,12 @@ export function SinceOpenedExplorer({
   onOpenStatistic,
 }: SinceOpenedExplorerProps) {
   const [factIndex, setFactIndex] = useState(0);
-  const highlights = getSinceOpenedHighlights(statistics, mode);
+  const selectedStartDate = new Date(openedAt);
+  const currentDate = new Date(now);
+  const highlights = getSinceOpenedHighlights(statistics, mode).filter(
+    (statistic) =>
+      !getCumulativeValue(statistic, selectedStartDate, currentDate).isUnavailable,
+  );
 
   useEffect(() => {
     if (highlights.length <= 1) {
@@ -100,20 +105,17 @@ export function SinceOpenedExplorer({
 
   const totalSinceOpened = highlights.reduce(
     (total, statistic) =>
-      total + calculateSincePageLoad(statistic.yearlyEstimate, openedAt, now),
+      total + getCumulativeValue(statistic, selectedStartDate, currentDate).value,
     0,
   );
-
-  const factStatistic = highlights[factIndex % highlights.length] ?? highlights[0];
-  const interestingFact = createInterestingFact(factStatistic);
-  const movementContext = createMovementContext(totalSinceOpened);
 
   if (highlights.length === 0) {
     return null;
   }
 
-  const factCategoryStyle = getCategoryStyle(factStatistic.category);
-
+  const factStatistic = highlights[factIndex % highlights.length] ?? highlights[0];
+  const interestingFact = createInterestingFact(factStatistic);
+  const movementContext = createMovementContext(totalSinceOpened);
   return (
     <section className="rounded-lg border border-border bg-card p-2.5 text-card-foreground shadow-subtle">
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
@@ -175,11 +177,8 @@ export function SinceOpenedExplorer({
 
       <div className="mt-2.5 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {highlights.map((statistic) => {
-          const count = calculateSincePageLoad(
-            statistic.yearlyEstimate,
-            openedAt,
-            now,
-          );
+          const cumulative = getCumulativeValue(statistic, selectedStartDate, currentDate);
+          const timelineLabel = getTimelineLabel(statistic, selectedStartDate, currentDate);
           const categoryStyle = getCategoryStyle(statistic.category);
 
           return (
@@ -197,8 +196,16 @@ export function SinceOpenedExplorer({
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">
-                  {formatLargeNumber(count, count >= 100_000)}
+                  {formatLargeNumber(cumulative.value, cumulative.value >= 100_000)}
                 </p>
+                {timelineLabel && (
+                  <p
+                    className={`truncate text-[11px] ${categoryStyle.text} opacity-60`}
+                    title={`This metric is only counted from when it realistically became available (${statistic.startYear})`}
+                  >
+                    {timelineLabel}
+                  </p>
+                )}
                 <p className="truncate text-xs text-muted-foreground">
                   {statistic.sinceOpenedLabel}
                 </p>

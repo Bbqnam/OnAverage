@@ -3,6 +3,7 @@ import { formatLabel } from "../lib/formatting";
 
 interface ConfidenceBadgeProps {
   confidence: Confidence;
+  title?: string;
 }
 
 const styles: Record<Confidence, string> = {
@@ -17,12 +18,14 @@ const tooltips: Record<Confidence, string> = {
   low: "Rough model estimate — directionally useful but treat as an order-of-magnitude guide.",
 };
 
-export function ConfidenceBadge({ confidence }: ConfidenceBadgeProps) {
+export function ConfidenceBadge({ confidence, title }: ConfidenceBadgeProps) {
+  const tooltip = title ?? tooltips[confidence];
+
   return (
     <span
       className={`inline-flex cursor-help items-center rounded-md border px-2 py-0.5 text-xs font-medium ${styles[confidence]}`}
-      title={tooltips[confidence]}
-      aria-label={`Confidence ${formatLabel(confidence)}: ${tooltips[confidence]}`}
+      title={tooltip}
+      aria-label={`Confidence ${formatLabel(confidence)}: ${tooltip}`}
     >
       {formatLabel(confidence)} confidence
     </span>

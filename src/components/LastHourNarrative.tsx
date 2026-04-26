@@ -1,6 +1,6 @@
 import { useMemo } from "react";
-import { yearlyToPerHour } from "../lib/calculations";
 import { formatLargeNumber } from "../lib/formatting";
+import { getCumulativeValue } from "../lib/timeline";
 import type { Statistic } from "../types/statistic";
 
 interface LastHourNarrativeProps {
@@ -93,11 +93,14 @@ const cardDefs: Array<{
 
 export function LastHourNarrative({ statistics }: LastHourNarrativeProps) {
   const cards: NarrativeCard[] = useMemo(() => {
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
     return cardDefs
       .map((def) => {
         const stat = statistics.find((s) => s.id === def.id);
         if (!stat) return null;
-        return { ...def, value: yearlyToPerHour(stat.yearlyEstimate) };
+        return { ...def, value: getCumulativeValue(stat, oneHourAgo, now).value };
       })
       .filter((c): c is NarrativeCard => c !== null);
   }, [statistics]);

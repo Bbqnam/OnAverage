@@ -15,6 +15,12 @@ export type Category =
 
 export type Confidence = "high" | "medium" | "low";
 
+export type SourceTier = "official" | "industry" | "estimated";
+
+export type EstimateType = "natural" | "modern" | "digital" | "tracked";
+
+export type GrowthCurve = "linear" | "exponential" | "disrupted" | "flat";
+
 export type DataMode = "live" | "semi-live" | "estimated";
 
 export type Sensitivity = "Normal" | "Sensitive";
@@ -40,20 +46,37 @@ export interface HistoricalChange {
   label: string; // e.g. "10 years ago"
 }
 
+export interface HistoricalDataPoint {
+  year: number;
+  value: number; // yearly total in the statistic's base unit
+}
+
+export interface StatisticSource {
+  name: string;
+  url: string;
+}
+
 export interface Statistic {
   id: string;
+  label: string;
   title: string;
   shortTitle: string;
   description: string;
   shortDescription: string;
+  emoji: string;
   category: Category;
   icon: string;
+  ratePerSecond: number;
   yearlyEstimate: number;
   unit: string;
   sourceName: string;
   sourceUrl?: string;
   sourceYear?: number; // e.g. 2023 — shown as "Based on 2023 data"
+  source: StatisticSource;
+  sourceTier: SourceTier;
+  dataLastUpdated: number;
   confidence: Confidence;
+  confidenceLevel: Confidence;
   dataMode: DataMode;
   sensitivity: Sensitivity;
   methodology: string;
@@ -63,7 +86,12 @@ export interface Statistic {
   isStatic?: boolean;
   contextNote?: string;
   confidenceInterval?: ConfidenceInterval;
+  confidenceRange?: { min: number; max: number };
   historicalChange?: HistoricalChange;
+  historicalData?: HistoricalDataPoint[];
+  startYear: number;
+  estimateType: EstimateType;
+  growthCurve: GrowthCurve;
   comparisonIds?: string[]; // IDs of stats to compare against
   surpriseFact?: string;    // "Most people guess X but it's actually Y"
 }

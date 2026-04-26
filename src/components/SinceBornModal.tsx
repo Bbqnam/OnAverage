@@ -1,7 +1,14 @@
 import { X } from "lucide-react";
-import { useState } from "react";
-import { calculateSinceBorn } from "../lib/calculations";
+import { useMemo, useState } from "react";
+import { categories } from "../data/categories";
+import { getCategoryStyle } from "../lib/categoryStyles";
 import { formatLargeNumber } from "../lib/formatting";
+import {
+  getBornBeforeNarrative,
+  getCumulativeValue,
+  getTimelineLabel,
+} from "../lib/timeline";
+import { StatIcon } from "./StatIcon";
 import type { Statistic } from "../types/statistic";
 
 interface SinceBornModalProps {
@@ -11,18 +18,14 @@ interface SinceBornModalProps {
   onSaveBirthYear: (year: number) => void;
 }
 
-const featuredCards = [
-  { id: "people-born",        emoji: "👶", label: "babies born",           color: "bg-emerald-50 dark:bg-emerald-950/40", num: "text-emerald-700 dark:text-emerald-300", border: "border-emerald-200 dark:border-emerald-800/50" },
-  { id: "people-died",        emoji: "🕊️", label: "people passed away",    color: "bg-slate-50 dark:bg-slate-950/40",   num: "text-slate-600 dark:text-slate-300",   border: "border-slate-200 dark:border-slate-700/50" },
-  { id: "internet-searches",  emoji: "🔍", label: "internet searches",     color: "bg-violet-50 dark:bg-violet-950/40", num: "text-violet-700 dark:text-violet-300", border: "border-violet-200 dark:border-violet-800/50" },
-  { id: "flights-taking-off", emoji: "✈️", label: "flights took off",      color: "bg-blue-50 dark:bg-blue-950/40",     num: "text-blue-700 dark:text-blue-300",     border: "border-blue-200 dark:border-blue-800/50" },
-  { id: "co2-emitted",        emoji: "🌫️", label: "tonnes of CO₂ emitted", color: "bg-zinc-50 dark:bg-zinc-950/40",     num: "text-zinc-600 dark:text-zinc-300",     border: "border-zinc-200 dark:border-zinc-700/50" },
-  { id: "trees-cut-down",     emoji: "🌲", label: "trees cut down",        color: "bg-teal-50 dark:bg-teal-950/40",     num: "text-teal-700 dark:text-teal-300",     border: "border-teal-200 dark:border-teal-800/50" },
-  { id: "coffee-consumed",    emoji: "☕", label: "cups of coffee",        color: "bg-amber-50 dark:bg-amber-950/40",   num: "text-amber-700 dark:text-amber-300",   border: "border-amber-200 dark:border-amber-800/50" },
-  { id: "messages-sent",      emoji: "💬", label: "messages sent",         color: "bg-sky-50 dark:bg-sky-950/40",       num: "text-sky-700 dark:text-sky-300",       border: "border-sky-200 dark:border-sky-800/50" },
-  { id: "ai-prompts-asked",   emoji: "🤖", label: "AI prompts asked",      color: "bg-purple-50 dark:bg-purple-950/40", num: "text-purple-700 dark:text-purple-300", border: "border-purple-200 dark:border-purple-800/50" },
-  { id: "car-journeys",       emoji: "🚗", label: "car journeys made",     color: "bg-orange-50 dark:bg-orange-950/40", num: "text-orange-700 dark:text-orange-300", border: "border-orange-200 dark:border-orange-800/50" },
-];
+const categoryOrder = new Map(categories.map((category, index) => [category, index]));
+
+function getTimelineGroup(statistic: Statistic, selectedStartDate: Date, now: Date): number {
+  const elapsed = getCumulativeValue(statistic, selectedStartDate, now);
+  if (elapsed.isUnavailable) return 2;
+  if (elapsed.wasClamped) return 1;
+  return 0;
+}
 
 export function SinceBornModal({
   statistics,
@@ -31,10 +34,39 @@ export function SinceBornModal({
   onSaveBirthYear,
 }: SinceBornModalProps) {
   const [inputYear, setInputYear] = useState(birthYear ? String(birthYear) : "");
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const currentYear = now.getFullYear();
   const year = Number(inputYear);
-  const isValidYear = year >= 1900 && year <= currentYear;
+  const isValidYear = year >= 1800 && year <= currentYear;
   const yearsElapsed = isValidYear ? currentYear - year : 0;
+  const selectedStartDate = isValidYear ? new Date(year, 0, 1) : null;
+  const sortedStatistics = useMemo(() => {
+    if (!selectedStartDate) return [];
+
+    return statistics
+      .map((statistic, index) => ({ statistic, index }))
+      .sort((a, b) => {
+        const groupDiff =
+          getTimelineGroup(a.statistic, selectedStartDate, now) -
+          getTimelineGroup(b.statistic, selectedStartDate, now);
+        if (groupDiff !== 0) return groupDiff;
+
+        const categoryDiff =
+          (categoryOrder.get(a.statistic.category) ?? 0) -
+          (categoryOrder.get(b.statistic.category) ?? 0);
+        if (categoryDiff !== 0) return categoryDiff;
+
+        return a.index - b.index;
+      })
+      .map(({ statistic }) => statistic);
+  }, [isValidYear, selectedStartDate, now, statistics]);
+
+  const hasClampedSignals =
+    selectedStartDate !== null &&
+    sortedStatistics.some(
+      (statistic) =>
+        getCumulativeValue(statistic, selectedStartDate, now).wasClamped,
+    );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
@@ -78,13 +110,20 @@ export function SinceBornModal({
               </button>
             )}
             {isValidYear && (
-              <span className="text-sm text-muted-foreground">
-                That's <span className="font-semibold text-foreground">{yearsElapsed} years</span> of Earth
-              </span>
+              <div className="min-w-0 text-sm text-muted-foreground">
+                <p>
+                  That's <span className="font-semibold text-foreground">{yearsElapsed} years</span> of Earth
+                </p>
+                {hasClampedSignals && (
+                  <p className="mt-0.5 text-xs text-muted-foreground/80">
+                    Some metrics counted from their start date, not your birth year.
+                  </p>
+                )}
+              </div>
             )}
           </div>
           {!isValidYear && inputYear.length >= 4 && (
-            <p className="mt-2 text-xs text-rose-500">Please enter a year between 1900 and {currentYear}.</p>
+            <p className="mt-2 text-xs text-rose-500">Please enter a year between 1800 and {currentYear}.</p>
           )}
         </div>
 
@@ -92,25 +131,59 @@ export function SinceBornModal({
         <div className="overflow-y-auto p-4">
           {isValidYear ? (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {featuredCards.map((def) => {
-                const stat = statistics.find((s) => s.id === def.id);
-                if (!stat) return null;
-                const total = calculateSinceBorn(stat.yearlyEstimate, year);
-                const formatted = formatLargeNumber(total, total >= 10_000);
+              {sortedStatistics.map((stat, index) => {
+                if (!selectedStartDate) return null;
+
+                const timeline = getCumulativeValue(stat, selectedStartDate, now);
+                const timelineLabel = getTimelineLabel(stat, selectedStartDate, now);
+                const narrative = getBornBeforeNarrative(stat, year);
+                const categoryStyle = getCategoryStyle(stat.category);
+                const formatted = formatLargeNumber(timeline.value, timeline.value >= 10_000);
 
                 return (
                   <div
-                    key={def.id}
-                    className={`flex flex-col gap-2 rounded-xl border p-4 ${def.color} ${def.border}`}
+                    key={`${stat.id}-${index}`}
+                    className={`flex min-w-0 flex-col gap-2 rounded-lg border border-y border-r bg-card p-3 ${categoryStyle.leftBorder} ${
+                      timeline.isUnavailable ? "opacity-40 grayscale" : ""
+                    }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span className="text-2xl leading-none">{def.emoji}</span>
-                    </div>
-                    <div>
-                      <p className={`text-2xl font-bold tabular-nums leading-tight ${def.num}`}>
-                        {formatted}
+                      <div
+                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
+                      >
+                        <StatIcon name={stat.icon} className="h-3.5 w-3.5" />
+                      </div>
+                      <p className="truncate text-xs font-medium text-muted-foreground">
+                        {stat.shortTitle}
                       </p>
-                      <p className="mt-0.5 text-xs font-medium text-foreground">{def.label}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className={`truncate text-2xl font-bold tabular-nums leading-tight ${categoryStyle.text}`}>
+                        {timeline.isUnavailable ? "—" : formatted}
+                      </p>
+                      {timeline.isUnavailable ? (
+                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                          Not available before {stat.startYear}
+                        </p>
+                      ) : timelineLabel ? (
+                        <p
+                          className={`mt-0.5 truncate text-[11px] ${categoryStyle.text} opacity-60`}
+                          title={`This metric is only counted from when it realistically became available (${stat.startYear})`}
+                        >
+                          {timelineLabel}
+                        </p>
+                      ) : null}
+                      {narrative && (
+                        <p
+                          className="mt-0.5 truncate text-[11px] italic text-muted-foreground"
+                          title={narrative}
+                        >
+                          {narrative}
+                        </p>
+                      )}
+                      <p className="mt-0.5 truncate text-xs font-medium text-foreground">
+                        {stat.sinceOpenedLabel}
+                      </p>
                     </div>
                   </div>
                 );
@@ -130,7 +203,7 @@ export function SinceBornModal({
         {/* Footer */}
         <div className="border-t border-border px-5 py-2.5">
           <p className="text-[11px] text-muted-foreground/60">
-            Cumulative estimates based on yearly averages — not precise historical records.
+            Cumulative estimates are clamped to each signal's realistic start date.
           </p>
         </div>
       </div>

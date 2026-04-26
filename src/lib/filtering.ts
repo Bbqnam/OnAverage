@@ -4,6 +4,7 @@ import type {
   DashboardTab,
   Statistic,
 } from "../types/statistic";
+import { getDisplayedConfidence } from "./confidence";
 
 export interface StatisticFilters {
   searchTerm: string;
@@ -27,7 +28,8 @@ export function filterStatistics(
       filters.selectedTab === "All" || statistic.category === filters.selectedTab;
 
     const matchesConfidence =
-      filters.confidence === "all" || statistic.confidence === filters.confidence;
+      filters.confidence === "all" ||
+      getDisplayedConfidence(statistic).confidence === filters.confidence;
 
     const matchesDataMode =
       filters.dataMode === "all" || statistic.dataMode === filters.dataMode;

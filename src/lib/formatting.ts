@@ -45,18 +45,6 @@ export function formatRate(value: number, unit: string, scale: TimeScale): strin
   return `${formatLargeNumber(value, value >= 10_000)} ${unit} / ${label}`;
 }
 
-export function formatElapsedTime(openedAt: number, now = Date.now()): string {
-  const elapsedSeconds = Math.max(0, Math.floor((now - openedAt) / 1000));
-  const minutes = Math.floor(elapsedSeconds / 60);
-  const seconds = elapsedSeconds % 60;
-
-  if (minutes === 0) {
-    return `${seconds}s`;
-  }
-
-  return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
-}
-
 export function sentenceCaseTimeScale(scale: TimeScale): string {
   return `Per ${scale}`;
 }

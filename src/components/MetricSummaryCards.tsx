@@ -1,8 +1,9 @@
 import { Activity, BadgeCheck, Database, Globe2, Layers3, Radio } from "lucide-react";
 import { categories } from "../data/categories";
-import { calculateSincePageLoad } from "../lib/calculations";
+import { getDisplayedConfidence } from "../lib/confidence";
 import { countFuzzyEstimates } from "../lib/filtering";
 import { formatLargeNumber } from "../lib/formatting";
+import { getCumulativeValue } from "../lib/timeline";
 import type { CountryDataset } from "../types/statistic";
 
 interface MetricSummaryCardsProps {
@@ -18,13 +19,18 @@ export function MetricSummaryCards({
   openedAt,
   now,
 }: MetricSummaryCardsProps) {
+  const selectedStartDate = new Date(openedAt);
+  const currentDate = new Date(now);
   const sinceOpened = dataset.statistics.reduce(
-    (total, statistic) => total + calculateSincePageLoad(statistic.yearlyEstimate, openedAt, now),
+    (total, statistic) =>
+      total + getCumulativeValue(statistic, selectedStartDate, currentDate).value,
     0,
   );
   const fuzzyCount = countFuzzyEstimates(dataset.statistics);
   const liveCount = dataset.statistics.filter((s) => s.dataMode !== "estimated").length;
-  const highConfidenceCount = dataset.statistics.filter((s) => s.confidence === "high").length;
+  const highConfidenceCount = dataset.statistics.filter(
+    (s) => getDisplayedConfidence(s).confidence === "high",
+  ).length;
 
   const cards = [
     {

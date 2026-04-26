@@ -27,6 +27,7 @@ import {
   savePreferences,
   toggleFavorite,
 } from "./lib/preferences";
+import { getCumulativeValue } from "./lib/timeline";
 import type {
   CountryCode,
   DashboardTab,
@@ -123,7 +124,12 @@ function App() {
   }
 
   function showRandomStatistic() {
-    const pool = filteredStatistics.length > 0 ? filteredStatistics : dataset.statistics;
+    const selectedStartDate = new Date(openedAt);
+    const currentDate = new Date(now);
+    const pool = (filteredStatistics.length > 0 ? filteredStatistics : dataset.statistics).filter(
+      (statistic) =>
+        !getCumulativeValue(statistic, selectedStartDate, currentDate).isUnavailable,
+    );
     // Prefer stats with a surpriseFact
     const surprising = pool.filter((s) => s.surpriseFact);
     const target = surprising.length > 2

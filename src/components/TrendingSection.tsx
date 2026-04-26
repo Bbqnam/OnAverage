@@ -4,6 +4,7 @@ import { StatIcon } from "./StatIcon";
 import { yearlyToPerSecond } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { formatLargeNumber } from "../lib/formatting";
+import { getHistoricalChange } from "../lib/historical";
 import { getBalancedGridClass } from "../lib/layout";
 import type { Statistic } from "../types/statistic";
 
@@ -30,7 +31,7 @@ export function TrendingSection({ statistics, onOpenStatistic }: TrendingSection
         {statistics.map((statistic) => {
           const perSecond = yearlyToPerSecond(statistic.yearlyEstimate);
           const categoryStyle = getCategoryStyle(statistic.category);
-          const change = statistic.historicalChange;
+          const change = getHistoricalChange(statistic);
 
           return (
             <button

@@ -1,4 +1,5 @@
 import type { Statistic } from "../types/statistic";
+import { getHistoricalChange } from "./historical";
 
 export type SinceOpenedMode = "mixed" | "live";
 
@@ -94,11 +95,11 @@ export function getTrendingStats(
   limit = 5,
 ): Statistic[] {
   const shifted = statistics
-    .filter((statistic) => statistic.historicalChange)
+    .filter((statistic) => getHistoricalChange(statistic))
     .sort(
       (a, b) =>
-        Math.abs(b.historicalChange?.percentChange ?? 0) -
-        Math.abs(a.historicalChange?.percentChange ?? 0),
+        Math.abs(getHistoricalChange(b)?.percentChange ?? 0) -
+        Math.abs(getHistoricalChange(a)?.percentChange ?? 0),
     );
   const curated = byId(statistics, trendingIds);
   const pool =

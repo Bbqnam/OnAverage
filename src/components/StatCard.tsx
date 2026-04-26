@@ -1,6 +1,8 @@
 import { Star, TrendingDown, TrendingUp } from "lucide-react";
-import { calculateSincePageLoad, getRateForScale, getRateRangeForScale } from "../lib/calculations";
+import { getRateForScale, getRateRangeForScale } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
+import { getHistoricalChange } from "../lib/historical";
+import { getCumulativeValue, getTimelineLabel } from "../lib/timeline";
 import { StatIcon } from "./StatIcon";
 import { formatLargeNumber } from "../lib/formatting";
 import type { Statistic, TimeScale } from "../types/statistic";
@@ -28,11 +30,14 @@ export function StatCard({
   onOpen,
   onToggleFavorite,
 }: StatCardProps) {
-  const sinceOpened = calculateSincePageLoad(statistic.yearlyEstimate, openedAt, now);
+  const selectedStartDate = new Date(openedAt);
+  const currentDate = new Date(now);
+  const cumulative = getCumulativeValue(statistic, selectedStartDate, currentDate);
+  const timelineLabel = getTimelineLabel(statistic, selectedStartDate, currentDate);
   const selectedRate = getRateForScale(statistic.yearlyEstimate, timeScale);
   const categoryStyle = getCategoryStyle(statistic.category);
   const ci = statistic.confidenceInterval;
-  const hist = statistic.historicalChange;
+  const hist = getHistoricalChange(statistic);
 
   const rateRange = ci
     ? getRateRangeForScale(statistic.yearlyEstimate, ci, timeScale)
@@ -56,7 +61,7 @@ export function StatCard({
       onClick={() => onOpen(statistic)}
       className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-lg border-y border-r bg-card text-card-foreground transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${categoryStyle.leftBorder} ${
         isHighlighted ? "ring-2 ring-primary/30" : ""
-      }`}
+      } ${cumulative.isUnavailable ? "opacity-40 grayscale" : ""}`}
     >
       {onToggleFavorite && (
         <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1">
@@ -106,8 +111,22 @@ export function StatCard({
           <div className="mt-1.5 flex items-end justify-between gap-2">
             <div className="min-w-0">
               <p className="text-2xl font-bold leading-none tracking-tight text-foreground">
-                {formatLargeNumber(sinceOpened, sinceOpened >= 100_000)}
+                {cumulative.isUnavailable
+                  ? "—"
+                  : formatLargeNumber(cumulative.value, cumulative.value >= 100_000)}
               </p>
+              {cumulative.isUnavailable ? (
+                <p className="mt-1 truncate text-[11px] leading-tight text-muted-foreground">
+                  Not available before {statistic.startYear}
+                </p>
+              ) : timelineLabel ? (
+                <p
+                  className={`mt-1 truncate text-[11px] leading-tight ${categoryStyle.text} opacity-60`}
+                  title={`This metric is only counted from when it realistically became available (${statistic.startYear})`}
+                >
+                  {timelineLabel}
+                </p>
+              ) : null}
               <p className={`mt-1 truncate text-[11px] leading-tight ${categoryStyle.rateText} opacity-85`}>
                 ≈ {rateStr}
               </p>

@@ -1,7 +1,10 @@
 import type {
   CountryDataset,
   CountryOption,
+  EstimateType,
+  GrowthCurve,
   Statistic,
+  SourceTier,
   TimeScale,
 } from "../types/statistic";
 
@@ -15,7 +18,182 @@ export const countryOptions: CountryOption[] = [
   { code: "japan", name: "Japan" },
 ];
 
-export const globalStatistics: Statistic[] = [
+const SECONDS_PER_YEAR = 31_556_952;
+
+type TimelineMetadata = {
+  startYear: number;
+  estimateType: EstimateType;
+  growthCurve: GrowthCurve;
+};
+
+type StatisticSeed = Omit<
+  Statistic,
+  | "label"
+  | "emoji"
+  | "ratePerSecond"
+  | "confidenceLevel"
+  | "confidenceRange"
+  | "source"
+  | "sourceTier"
+  | "dataLastUpdated"
+  | "startYear"
+  | "estimateType"
+  | "growthCurve"
+> &
+  Partial<
+    Pick<
+      Statistic,
+      | "label"
+      | "emoji"
+      | "confidenceRange"
+      | "source"
+      | "sourceTier"
+      | "dataLastUpdated"
+      | "startYear"
+      | "estimateType"
+      | "growthCurve"
+    >
+  >;
+
+const timelineMetadataById: Record<string, TimelineMetadata> = {
+  "people-born": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "people-died": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "population-change": { startYear: 1800, estimateType: "natural", growthCurve: "linear" },
+  "people-waking-up": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "naps-started": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "meals-eaten": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "coffee-consumed": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "people-getting-married": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "babies-named": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "steps-walked": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "lightning-strikes": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "surgeries-performed": { startYear: 1846, estimateType: "modern", growthCurve: "linear" },
+  "vaccines-administered": { startYear: 1980, estimateType: "tracked", growthCurve: "linear" },
+  "cancer-diagnoses": { startYear: 1990, estimateType: "tracked", growthCurve: "linear" },
+  "hospital-visits": { startYear: 1950, estimateType: "tracked", growthCurve: "linear" },
+  "flights-taking-off": { startYear: 1914, estimateType: "modern", growthCurve: "linear" },
+  "flights-landing": { startYear: 1914, estimateType: "modern", growthCurve: "linear" },
+  "passengers-flying": { startYear: 1914, estimateType: "modern", growthCurve: "linear" },
+  "cars-produced": { startYear: 1908, estimateType: "modern", growthCurve: "linear" },
+  "road-accidents": { startYear: 1908, estimateType: "modern", growthCurve: "linear" },
+  "train-journeys": { startYear: 1830, estimateType: "modern", growthCurve: "linear" },
+  "ships-arriving-ports": { startYear: 1800, estimateType: "modern", growthCurve: "flat" },
+  "satellites-orbiting-earth": { startYear: 1957, estimateType: "tracked", growthCurve: "linear" },
+  "emails-sent": { startYear: 1995, estimateType: "digital", growthCurve: "exponential" },
+  "internet-searches": { startYear: 1995, estimateType: "digital", growthCurve: "exponential" },
+  "websites-created": { startYear: 1991, estimateType: "digital", growthCurve: "exponential" },
+  "messages-sent": { startYear: 1992, estimateType: "digital", growthCurve: "exponential" },
+  "social-posts-created": { startYear: 2004, estimateType: "digital", growthCurve: "exponential" },
+  "videos-watched": { startYear: 2005, estimateType: "digital", growthCurve: "exponential" },
+  "apps-downloaded": { startYear: 2008, estimateType: "digital", growthCurve: "exponential" },
+  "cybersecurity-attacks": { startYear: 1988, estimateType: "digital", growthCurve: "exponential" },
+  "wikipedia-edits": { startYear: 2001, estimateType: "digital", growthCurve: "linear" },
+  "crypto-trades": { startYear: 2009, estimateType: "digital", growthCurve: "exponential" },
+  "ai-prompts-asked": { startYear: 2022, estimateType: "digital", growthCurve: "exponential" },
+  "card-payments-made": { startYear: 1950, estimateType: "modern", growthCurve: "linear" },
+  "online-purchases": { startYear: 1995, estimateType: "digital", growthCurve: "exponential" },
+  "stock-trades": { startYear: 1792, estimateType: "modern", growthCurve: "linear" },
+  "new-millionaires": { startYear: 1900, estimateType: "tracked", growthCurve: "linear" },
+  "personal-bankruptcies": { startYear: 1800, estimateType: "modern", growthCurve: "flat" },
+  "money-spent-online": { startYear: 1995, estimateType: "digital", growthCurve: "exponential" },
+  "books-sold": { startYear: 1800, estimateType: "modern", growthCurve: "flat" },
+  "crimes-reported": { startYear: 1900, estimateType: "tracked", growthCurve: "linear" },
+  "emergency-calls": { startYear: 1937, estimateType: "modern", growthCurve: "linear" },
+  "houses-built": { startYear: 1800, estimateType: "modern", growthCurve: "linear" },
+  "people-moving-homes": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "trees-cut-down": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "trees-planted": { startYear: 1950, estimateType: "tracked", growthCurve: "linear" },
+  "co2-emitted": { startYear: 1750, estimateType: "tracked", growthCurve: "exponential" },
+  "plastic-bottles-used": { startYear: 1950, estimateType: "modern", growthCurve: "exponential" },
+  "waste-produced": { startYear: 1800, estimateType: "natural", growthCurve: "linear" },
+  "renewable-energy-generated": { startYear: 1900, estimateType: "modern", growthCurve: "exponential" },
+  "freshwater-withdrawn": { startYear: 1800, estimateType: "natural", growthCurve: "linear" },
+  "people-hired": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "people-laid-off": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "new-businesses-started": { startYear: 1800, estimateType: "modern", growthCurve: "linear" },
+  "businesses-closing": { startYear: 1800, estimateType: "modern", growthCurve: "linear" },
+  "companies-bankrupt": { startYear: 1800, estimateType: "modern", growthCurve: "flat" },
+  "people-retiring": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "earthquakes-detected": { startYear: 1900, estimateType: "tracked", growthCurve: "flat" },
+  "asteroids-passing-earth": { startYear: 1900, estimateType: "tracked", growthCurve: "flat" },
+  "students-starting-school": { startYear: 1800, estimateType: "natural", growthCurve: "linear" },
+  "students-graduating": { startYear: 1800, estimateType: "natural", growthCurve: "linear" },
+  "people-losing-keys": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "pizzas-eaten": { startYear: 1889, estimateType: "modern", growthCurve: "linear" },
+  "people-laughing": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "people-scrolling-phones": { startYear: 2007, estimateType: "digital", growthCurve: "exponential" },
+  "selfies-taken": { startYear: 2010, estimateType: "digital", growthCurve: "exponential" },
+  "news-articles-published": { startYear: 1800, estimateType: "modern", growthCurve: "linear" },
+  "people-starting-new-job": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "tea-consumed": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "people-stuck-in-traffic": { startYear: 1908, estimateType: "modern", growthCurve: "linear" },
+  "cars-passing-inspection": { startYear: 1908, estimateType: "modern", growthCurve: "linear" },
+  "storms-active": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "animals-slaughtered": { startYear: 1800, estimateType: "natural", growthCurve: "flat" },
+  "food-wasted": { startYear: 1800, estimateType: "natural", growthCurve: "linear" },
+  "restaurant-meals": { startYear: 1800, estimateType: "modern", growthCurve: "linear" },
+};
+
+const sourceTierOverrides: Record<string, SourceTier> = {
+  "people-born": "official",
+  "people-died": "official",
+  "population-change": "official",
+  "flights-taking-off": "official",
+  "flights-landing": "official",
+  "passengers-flying": "official",
+  "co2-emitted": "official",
+  "wikipedia-edits": "official",
+  "card-payments-made": "official",
+  "emails-sent": "industry",
+  "internet-searches": "estimated",
+  "cybersecurity-attacks": "estimated",
+  "ai-prompts-asked": "estimated",
+  "crimes-reported": "estimated",
+};
+
+function ensureEstimatedMethodology(seed: StatisticSeed, sourceTier: SourceTier): string {
+  if (sourceTier !== "estimated") return seed.methodology;
+
+  const sentenceCount = seed.methodology.split(/[.!?]+/).filter((part) => part.trim()).length;
+  if (sentenceCount >= 2) return seed.methodology;
+
+  return `${seed.methodology} No complete official global time series is attached for this signal, so this value should be treated as a directional estimate until reviewed source data replaces it.`;
+}
+
+function enrichStatistic(seed: StatisticSeed): Statistic {
+  const fallbackTimeline: TimelineMetadata = {
+    startYear: 1800,
+    estimateType: "tracked",
+    growthCurve: "linear",
+  };
+  const timeline = timelineMetadataById[seed.id] ?? fallbackTimeline;
+  const sourceTier = seed.sourceTier ?? sourceTierOverrides[seed.id] ?? "estimated";
+  const confidenceRange = seed.confidenceRange ??
+    (seed.confidenceInterval
+      ? { min: seed.confidenceInterval.low, max: seed.confidenceInterval.high }
+      : undefined);
+
+  return {
+    ...seed,
+    label: seed.label ?? seed.title,
+    emoji: seed.emoji ?? "",
+    ratePerSecond: seed.yearlyEstimate / SECONDS_PER_YEAR,
+    source: seed.source ?? {
+      name: seed.sourceName,
+      url: seed.sourceUrl ?? "",
+    },
+    sourceTier,
+    dataLastUpdated: seed.dataLastUpdated ?? seed.sourceYear ?? 2024,
+    confidenceLevel: seed.confidence,
+    confidenceRange,
+    methodology: ensureEstimatedMethodology(seed, sourceTier),
+    startYear: seed.startYear ?? timeline.startYear,
+    estimateType: seed.estimateType ?? timeline.estimateType,
+    growthCurve: seed.growthCurve ?? timeline.growthCurve,
+  };
+}
+
+const globalStatisticSeeds: StatisticSeed[] = [
   {
     id: "people-born",
     title: "People born",
@@ -25,16 +203,38 @@ export const globalStatistics: Statistic[] = [
     shortDescription: "Global live births estimate",
     category: "Life",
     icon: "baby",
-    yearlyEstimate: 132_500_000,
+    yearlyEstimate: 132_405_927,
     unit: "people",
     sourceName: "UN DESA, World Population Prospects 2024",
     sourceUrl: "https://population.un.org/wpp/",
     sourceYear: 2024,
+    source: {
+      name: "UN DESA, World Population Prospects 2024",
+      url: "https://population.un.org/wpp/",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2024,
     confidence: "high",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Uses a rounded annual global births estimate and divides it by the average number of seconds, minutes, hours, and days in a year.",
+      "Uses the World total Births indicator from UN World Population Prospects 2024. WPP reports annual totals in thousands, so the values are converted to whole people and then divided by the average number of seconds, minutes, hours, and days in a year.",
+    // SOURCE: UN DESA, World Population Prospects 2024
+    // URL: https://population.un.org/wpp/
+    // ACCESSED:
+    // NOTES: World totals from Births indicator; WPP reports thousands, converted to whole people. 2024 is from the WPP 2024 medium projection because the estimates sheet ends at 2023.
+    historicalData: [
+      { year: 2015, value: 144_333_945 },
+      { year: 2016, value: 144_854_100 },
+      { year: 2017, value: 143_601_801 },
+      { year: 2018, value: 140_332_732 },
+      { year: 2019, value: 138_596_791 },
+      { year: 2020, value: 134_719_611 },
+      { year: 2021, value: 133_448_839 },
+      { year: 2022, value: 132_475_391 },
+      { year: 2023, value: 132_110_264 },
+      { year: 2024, value: 132_405_927 },
+    ],
     tags: ["birth", "babies", "population", "demographics", "un"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "babies were born",
@@ -54,16 +254,38 @@ export const globalStatistics: Statistic[] = [
     shortDescription: "Global mortality estimate",
     category: "Life",
     icon: "circle-dot",
-    yearlyEstimate: 63_600_000,
+    yearlyEstimate: 62_389_498,
     unit: "people",
     sourceName: "UN DESA, World Population Prospects 2024",
     sourceUrl: "https://population.un.org/wpp/",
     sourceYear: 2024,
+    source: {
+      name: "UN DESA, World Population Prospects 2024",
+      url: "https://population.un.org/wpp/",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2024,
     confidence: "high",
     dataMode: "semi-live",
     sensitivity: "Sensitive",
     methodology:
-      "Uses a rounded annual global deaths estimate and converts it into average rates. It is framed for demographic context only.",
+      "Uses the World total Deaths indicator from UN World Population Prospects 2024. WPP reports annual totals in thousands, so the values are converted to whole people and then converted into average rates for demographic context.",
+    // SOURCE: UN DESA, World Population Prospects 2024
+    // URL: https://population.un.org/wpp/
+    // ACCESSED:
+    // NOTES: World totals from Total Deaths indicator; WPP reports thousands, converted to whole people. 2024 is from the WPP 2024 medium projection because the estimates sheet ends at 2023.
+    historicalData: [
+      { year: 2015, value: 56_305_968 },
+      { year: 2016, value: 56_756_911 },
+      { year: 2017, value: 57_572_254 },
+      { year: 2018, value: 57_792_804 },
+      { year: 2019, value: 58_354_932 },
+      { year: 2020, value: 63_546_315 },
+      { year: 2021, value: 69_728_100 },
+      { year: 2022, value: 62_278_627 },
+      { year: 2023, value: 61_651_608 },
+      { year: 2024, value: 62_389_498 },
+    ],
     confidenceInterval: { low: 61_000_000, high: 66_000_000 },
     historicalChange: { yearsAgo: 10, percentChange: +12, label: "10 years ago" },
     tags: ["death", "mortality", "population", "demographics", "un"],
@@ -81,15 +303,38 @@ export const globalStatistics: Statistic[] = [
     shortDescription: "Births minus deaths",
     category: "Life",
     icon: "trending-up",
-    yearlyEstimate: 68_900_000,
+    yearlyEstimate: 70_016_429,
     unit: "people",
     sourceName: "UN DESA, World Population Prospects 2024",
     sourceUrl: "https://population.un.org/wpp/",
+    sourceYear: 2024,
+    source: {
+      name: "UN DESA, World Population Prospects 2024",
+      url: "https://population.un.org/wpp/",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2024,
     confidence: "high",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Approximates global net population change by subtracting estimated annual deaths from estimated annual births.",
+      "Calculates natural population change by subtracting the WPP World total Deaths indicator from the WPP World total Births indicator for each year. The values are converted from WPP thousands to whole people before the subtraction, so the trend shown here uses the same base values as the birth and death signals.",
+    // SOURCE: UN DESA, World Population Prospects 2024
+    // URL: https://population.un.org/wpp/
+    // ACCESSED:
+    // NOTES: Births minus Total Deaths, using WPP World totals converted from thousands to whole people. 2024 is from the WPP 2024 medium projection because the estimates sheet ends at 2023.
+    historicalData: [
+      { year: 2015, value: 88_027_977 },
+      { year: 2016, value: 88_097_189 },
+      { year: 2017, value: 86_029_547 },
+      { year: 2018, value: 82_539_928 },
+      { year: 2019, value: 80_241_859 },
+      { year: 2020, value: 71_173_296 },
+      { year: 2021, value: 63_720_739 },
+      { year: 2022, value: 70_196_764 },
+      { year: 2023, value: 70_458_656 },
+      { year: 2024, value: 70_016_429 },
+    ],
     tags: ["population", "growth", "demographics", "net change"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "people were added to the global population",
@@ -248,11 +493,34 @@ export const globalStatistics: Statistic[] = [
     unit: "flights",
     sourceName: "ICAO Annual Report 2024",
     sourceUrl: "https://www.icao.int/about-icao/AnnualReport2024/world-air-transport-2024",
+    sourceYear: 2024,
+    source: {
+      name: "World Bank air transport indicators and ICAO Annual Report 2024",
+      url: "https://www.icao.int/about-icao/AnnualReport2024/world-air-transport-2024",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2024,
     confidence: "high",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Uses ICAO's annual scheduled departures figure and converts it into average time-scale rates.",
+      "Uses World Bank Air transport, registered carrier departures worldwide for 2015–2023 and ICAO Annual Report 2024 for the latest scheduled-departures figure. The annual departure totals are converted into average time-scale rates without changing the historical base values used for the chart trend.",
+    // SOURCE: World Bank IS.AIR.DPRT and ICAO Annual Report 2024
+    // URL: https://data.worldbank.org/indicator/IS.AIR.DPRT and https://www.icao.int/about-icao/AnnualReport2024/world-air-transport-2024
+    // ACCESSED:
+    // NOTES: 2015–2023 are World Bank WLD registered carrier departures. 2024 uses ICAO Annual Report 2024 scheduled departures.
+    historicalData: [
+      { year: 2015, value: 34_030_586 },
+      { year: 2016, value: 35_337_714 },
+      { year: 2017, value: 36_299_460.058 },
+      { year: 2018, value: 37_405_640.2483859 },
+      { year: 2019, value: 38_082_933.0101283 },
+      { year: 2020, value: 20_098_778.5634 },
+      { year: 2021, value: 24_054_588.846 },
+      { year: 2022, value: 29_289_064.821 },
+      { year: 2023, value: 34_764_894.146 },
+      { year: 2024, value: 37_400_000 },
+    ],
     tags: ["flight", "air travel", "aviation", "takeoff", "icao"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "flights took off",
@@ -267,15 +535,38 @@ export const globalStatistics: Statistic[] = [
     shortDescription: "Completed scheduled arrivals",
     category: "Travel",
     icon: "plane-landing",
-    yearlyEstimate: 37_300_000,
+    yearlyEstimate: 37_400_000,
     unit: "flights",
     sourceName: "ICAO Annual Report 2024",
     sourceUrl: "https://www.icao.int/about-icao/AnnualReport2024/world-air-transport-2024",
+    sourceYear: 2024,
+    source: {
+      name: "World Bank air transport indicators and ICAO Annual Report 2024",
+      url: "https://www.icao.int/about-icao/AnnualReport2024/world-air-transport-2024",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2024,
     confidence: "medium",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Uses scheduled departures as a baseline and trims slightly for reporting boundaries, diversions, and timing differences.",
+      "Uses official scheduled departures as the global proxy because every completed scheduled departure corresponds to an arrival, while a separate global landing-count series is not published consistently. 2015–2023 come from the World Bank departures indicator and 2024 comes from ICAO Annual Report 2024, with the proxy limitation reflected in Medium confidence.",
+    // SOURCE: World Bank IS.AIR.DPRT and ICAO Annual Report 2024
+    // URL: https://data.worldbank.org/indicator/IS.AIR.DPRT and https://www.icao.int/about-icao/AnnualReport2024/world-air-transport-2024
+    // ACCESSED:
+    // NOTES: Uses scheduled departures as the official proxy for landings; no separate global landing-count series was found.
+    historicalData: [
+      { year: 2015, value: 34_030_586 },
+      { year: 2016, value: 35_337_714 },
+      { year: 2017, value: 36_299_460.058 },
+      { year: 2018, value: 37_405_640.2483859 },
+      { year: 2019, value: 38_082_933.0101283 },
+      { year: 2020, value: 20_098_778.5634 },
+      { year: 2021, value: 24_054_588.846 },
+      { year: 2022, value: 29_289_064.821 },
+      { year: 2023, value: 34_764_894.146 },
+      { year: 2024, value: 37_400_000 },
+    ],
     tags: ["flight", "air travel", "aviation", "landing", "icao"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "flights landed",
@@ -293,11 +584,34 @@ export const globalStatistics: Statistic[] = [
     unit: "passengers",
     sourceName: "ICAO Annual Report 2024",
     sourceUrl: "https://www.icao.int/about-icao/AnnualReport2024/world-air-transport-2024",
+    sourceYear: 2024,
+    source: {
+      name: "World Bank air transport indicators and ICAO Annual Report 2024",
+      url: "https://www.icao.int/about-icao/AnnualReport2024/world-air-transport-2024",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2024,
     confidence: "high",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Uses ICAO's annual scheduled passenger count and converts it into average time-scale rates.",
+      "Uses World Bank Air transport, passengers carried for 2015–2023 and ICAO Annual Report 2024 for the latest scheduled passenger total. The annual passenger totals are converted into average time-scale rates without changing the historical base values used for the chart trend.",
+    // SOURCE: World Bank IS.AIR.PSGR and ICAO Annual Report 2024
+    // URL: https://data.worldbank.org/indicator/IS.AIR.PSGR and https://www.icao.int/about-icao/AnnualReport2024/world-air-transport-2024
+    // ACCESSED:
+    // NOTES: 2015–2023 are World Bank WLD passengers carried. 2024 uses ICAO Annual Report 2024 scheduled passenger total.
+    historicalData: [
+      { year: 2015, value: 3_525_115_153 },
+      { year: 2016, value: 3_760_774_350 },
+      { year: 2017, value: 4_025_616_011.77031 },
+      { year: 2018, value: 4_293_921_426.12931 },
+      { year: 2019, value: 4_455_690_101.02828 },
+      { year: 2020, value: 1_771_894_087.0245 },
+      { year: 2021, value: 2_279_974_770.123 },
+      { year: 2022, value: 3_230_288_279.667 },
+      { year: 2023, value: 4_268_984_474.03796 },
+      { year: 2024, value: 4_900_000_000 },
+    ],
     tags: ["passengers", "aviation", "air travel", "icao"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "passengers flew",
@@ -336,13 +650,20 @@ export const globalStatistics: Statistic[] = [
     icon: "triangle-alert",
     yearlyEstimate: 50_000_000,
     unit: "incidents",
-    sourceName: "WHO road safety directional range placeholder",
-    sourceUrl: "https://www.who.int/teams/social-determinants-of-health/safety-and-mobility/road-safety",
+    sourceName: "WHO Global status report on road safety 2023",
+    sourceUrl: "https://www.who.int/publications/i/item/9789240086517",
+    sourceYear: 2021,
+    source: {
+      name: "WHO Global status report on road safety 2023",
+      url: "https://www.who.int/publications/i/item/9789240086517",
+    },
+    sourceTier: "estimated",
+    dataLastUpdated: 2021,
     confidence: "low",
     dataMode: "estimated",
     sensitivity: "Sensitive",
     methodology:
-      "Uses the upper end of common global road-crash injury ranges as a broad incident proxy until a cleaner dataset is added.",
+      "WHO publishes global road-traffic deaths and a broad non-fatal injury range, but it does not publish a precise annual global road-crash incident count. This signal therefore uses the upper end of WHO's 20–50 million non-fatal injury range as a cautious modeled incident proxy and remains Low confidence.",
     tags: ["road safety", "accidents", "cars", "sensitive", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "road incidents occurred",
@@ -564,15 +885,38 @@ export const globalStatistics: Statistic[] = [
     shortDescription: "Questions typed into search",
     category: "Technology",
     icon: "search",
-    yearlyEstimate: 3_100_000_000_000,
+    yearlyEstimate: 8_500_000_000_000,
     unit: "searches",
-    sourceName: "Internet Live Stats / public web search estimates",
-    sourceUrl: "https://www.internetlivestats.com/google-search-statistics/",
+    sourceName: "ITU statistics and public search-volume model",
+    sourceUrl: "https://www.itu.int/en/ITU-D/Statistics/",
+    sourceYear: 2024,
+    source: {
+      name: "ITU internet user statistics and public search-volume estimates",
+      url: "https://www.itu.int/en/ITU-D/Statistics/",
+    },
+    sourceTier: "estimated",
+    dataLastUpdated: 2024,
     confidence: "low",
-    dataMode: "semi-live",
+    dataMode: "estimated",
     sensitivity: "Normal",
     methodology:
-      "Uses a public web-search volume estimate and converts it into average rates. Exact current query counts are not public.",
+      "Derived from industry estimates of Google search volume (~90% market share, ~8.5 trillion searches/year in 2024) scaled back historically using ITU internet user growth data. No official source publishes global search volume, so the historical series is a modeled estimate rather than an official count.",
+    // SOURCE: ITU internet-user statistics plus public Google search-volume estimates
+    // URL: https://www.itu.int/en/ITU-D/Statistics/
+    // ACCESSED:
+    // NOTES: Estimated from 2024 global search volume of 8.5 trillion and scaled backward by World Bank/ITU internet-user counts; no official global search-volume dataset exists.
+    historicalData: [
+      { year: 2015, value: 4_353_732_719_968 },
+      { year: 2016, value: 4_813_210_867_196 },
+      { year: 2017, value: 5_169_419_089_623 },
+      { year: 2018, value: 5_575_446_445_658 },
+      { year: 2019, value: 6_147_169_811_642 },
+      { year: 2020, value: 6_921_891_330_035 },
+      { year: 2021, value: 7_409_554_836_964 },
+      { year: 2022, value: 7_849_010_078_267 },
+      { year: 2023, value: 8_182_344_459_935 },
+      { year: 2024, value: 8_500_000_000_000 },
+    ],
     tags: ["search", "internet", "google", "questions", "technology", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "searches happened",
@@ -589,15 +933,38 @@ export const globalStatistics: Statistic[] = [
     shortDescription: "Global email traffic",
     category: "Technology",
     icon: "mail",
-    yearlyEstimate: 132_000_000_000_000,
+    yearlyEstimate: 132_071_688_000_000,
     unit: "emails",
-    sourceName: "Radicati / public email volume estimates placeholder",
-    sourceUrl: "https://www.radicati.com/",
+    sourceName: "Statista — Number of sent and received emails per day worldwide",
+    sourceUrl: "https://www.statista.com/statistics/456500/daily-number-of-e-mails-worldwide/",
+    sourceYear: 2024,
+    source: {
+      name: "Statista — Number of sent and received emails per day worldwide",
+      url: "https://www.statista.com/statistics/456500/daily-number-of-e-mails-worldwide/",
+    },
+    sourceTier: "industry",
+    dataLastUpdated: 2024,
     confidence: "medium",
-    dataMode: "semi-live",
+    dataMode: "estimated",
     sensitivity: "Normal",
     methodology:
-      "Starts from rounded public daily email-volume estimates and annualizes the result.",
+      "Uses Statista's published daily global email-volume series and annualizes each daily value using 365.2425 days per year. Statista's accessible series begins in 2017, so 2015 and 2016 are interpolated/backcast values and are flagged in the source notes.",
+    // SOURCE: Statista — Number of sent and received emails per day worldwide
+    // URL: https://www.statista.com/statistics/456500/daily-number-of-e-mails-worldwide/
+    // ACCESSED:
+    // NOTES: Daily values were annualized with 365.2425 days. 2015–2016 are interpolated/backcast because the public series begins in 2017.
+    historicalData: [
+      { year: 2015, value: 89_301_791_250_000 },
+      { year: 2016, value: 93_757_749_750_000 },
+      { year: 2017, value: 98_250_232_500_000 },
+      { year: 2018, value: 102_669_666_750_000 },
+      { year: 2019, value: 107_235_198_000_000 },
+      { year: 2020, value: 111_910_302_000_000 },
+      { year: 2021, value: 116_731_503_000_000 },
+      { year: 2022, value: 121_698_801_000_000 },
+      { year: 2023, value: 126_848_720_250_000 },
+      { year: 2024, value: 132_071_688_000_000 },
+    ],
     tags: ["email", "internet", "communication", "technology"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "emails were sent",
@@ -703,17 +1070,39 @@ export const globalStatistics: Statistic[] = [
     icon: "bot",
     yearlyEstimate: 550_000_000_000,
     unit: "prompts",
-    sourceName: "OnAverage AI usage placeholder",
+    sourceName: "Modeled AI assistant usage estimate",
     sourceUrl: "https://aiindex.stanford.edu/",
+    sourceYear: 2024,
+    source: {
+      name: "AI Index and published AI-provider usage statements",
+      url: "https://aiindex.stanford.edu/",
+    },
+    sourceTier: "estimated",
+    dataLastUpdated: 2024,
     confidence: "low",
-    dataMode: "semi-live",
+    dataMode: "estimated",
     sensitivity: "Normal",
     methodology:
-      "Uses a speculative seed estimate below broad social-content volume because global AI prompt counts are not publicly reported in a standardized way.",
+      "Derived from OpenAI, Anthropic, and Google published user statistics and query volume statements plus estimated market share of major LLM providers. Pre-2022 figures are negligible and no official source publishes global prompt counts, so this is directional only with high uncertainty.",
+    // SOURCE: AI Index and published AI-provider usage statements
+    // URL: https://aiindex.stanford.edu/
+    // ACCESSED:
+    // NOTES: Modeled estimate; pre-2022 activity is negligible and no official global prompt-volume dataset exists.
+    historicalData: [
+      { year: 2015, value: 0 },
+      { year: 2016, value: 0 },
+      { year: 2017, value: 0 },
+      { year: 2018, value: 100_000_000 },
+      { year: 2019, value: 300_000_000 },
+      { year: 2020, value: 800_000_000 },
+      { year: 2021, value: 2_000_000_000 },
+      { year: 2022, value: 20_000_000_000 },
+      { year: 2023, value: 180_000_000_000 },
+      { year: 2024, value: 550_000_000_000 },
+    ],
     tags: ["ai", "prompts", "chatbot", "technology", "playful", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "AI prompts were asked",
-    historicalChange: { yearsAgo: 3, percentChange: +4800, label: "3 years ago" },
   },
   {
     id: "card-payments-made",
@@ -724,15 +1113,38 @@ export const globalStatistics: Statistic[] = [
     shortDescription: "Tap, swipe, insert",
     category: "Money",
     icon: "credit-card",
-    yearlyEstimate: 1_500_000_000_000,
+    yearlyEstimate: 755_842_233_000,
     unit: "payments",
-    sourceName: "Nilson Report / payments industry placeholder",
-    sourceUrl: "https://nilsonreport.com/",
+    sourceName: "BIS CPMI comparative tables type 1",
+    sourceUrl: "https://www.bis.org/cpmi/publ/d174.htm",
+    sourceYear: 2023,
+    source: {
+      name: "BIS CPMI comparative tables type 1",
+      url: "https://www.bis.org/cpmi/publ/d174.htm",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2023,
     confidence: "medium",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Uses a rounded annual card transaction estimate from payments-industry reporting.",
+      "Uses BIS CPMI comparative table CT1 for card and e-money payments reported by CPMI jurisdictions, summed across reporting countries. This is the best free official aggregate available but is not a complete world total, so confidence remains Medium even though the source is official.",
+    // SOURCE: BIS CPMI comparative tables type 1
+    // URL: https://www.bis.org/cpmi/publ/d174.htm
+    // ACCESSED:
+    // NOTES: Sums CT1 indicator M, measure N, instrument E (card and e-money payments) across BIS reporting jurisdictions; 2024 was not yet published in the fetched bulk data.
+    historicalData: [
+      { year: 2014, value: 206_859_145_000 },
+      { year: 2015, value: 235_283_305_000 },
+      { year: 2016, value: 270_545_959_000 },
+      { year: 2017, value: 323_624_277_000 },
+      { year: 2018, value: 402_313_858_000 },
+      { year: 2019, value: 503_712_465_000 },
+      { year: 2020, value: 534_219_790_000 },
+      { year: 2021, value: 581_788_275_000 },
+      { year: 2022, value: 653_732_227_700 },
+      { year: 2023, value: 755_842_233_000 },
+    ],
     tags: ["payments", "cards", "finance", "money"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "card payments were made",
@@ -884,13 +1296,36 @@ export const globalStatistics: Statistic[] = [
     icon: "shield-alert",
     yearlyEstimate: 96_000_000,
     unit: "reports",
-    sourceName: "UNODC crime statistics placeholder",
+    sourceName: "UNODC Crime and Criminal Justice Statistics model",
     sourceUrl: "https://dataunodc.un.org/",
+    sourceYear: 2024,
+    source: {
+      name: "UNODC Crime and Criminal Justice Statistics",
+      url: "https://dataunodc.un.org/",
+    },
+    sourceTier: "estimated",
+    dataLastUpdated: 2024,
     confidence: "low",
     dataMode: "estimated",
     sensitivity: "Sensitive",
     methodology:
-      "Uses a rounded placeholder because reporting rates, legal definitions, and police statistics differ by country.",
+      "Derived from UNODC country-level police-recorded crime tables where available, then scaled to account for missing countries and incomplete offence categories. UNODC does not publish a single precise global reported-crime total, so this remains a modeled estimate with substantial definitional and reporting-rate uncertainty.",
+    // SOURCE: UNODC Crime and Criminal Justice Statistics
+    // URL: https://dataunodc.un.org/
+    // ACCESSED:
+    // NOTES: Modeled estimate from partial UNODC police-recorded crime data; global reported-crime totals are imprecise and require human review before publication.
+    historicalData: [
+      { year: 2015, value: 90_000_000 },
+      { year: 2016, value: 91_500_000 },
+      { year: 2017, value: 93_000_000 },
+      { year: 2018, value: 94_500_000 },
+      { year: 2019, value: 96_000_000 },
+      { year: 2020, value: 92_000_000 },
+      { year: 2021, value: 94_000_000 },
+      { year: 2022, value: 97_000_000 },
+      { year: 2023, value: 99_000_000 },
+      { year: 2024, value: 101_000_000 },
+    ],
     tags: ["crime", "public safety", "society", "sensitive", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "crimes were reported",
@@ -1018,13 +1453,36 @@ export const globalStatistics: Statistic[] = [
     icon: "cloud",
     yearlyEstimate: 37_400_000_000,
     unit: "metric tons",
-    sourceName: "Global Carbon Project placeholder",
-    sourceUrl: "https://globalcarbonbudget.org/",
-    confidence: "medium",
+    sourceName: "Global Carbon Project — Global Carbon Budget 2024",
+    sourceUrl: "https://www.globalcarbonproject.org/carbonbudget/",
+    sourceYear: 2024,
+    source: {
+      name: "Global Carbon Project — Global Carbon Budget 2024",
+      url: "https://www.globalcarbonproject.org/carbonbudget/",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2024,
+    confidence: "high",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Uses a rounded annual fossil CO₂ estimate from public carbon-budget reporting.",
+      "Uses Global Carbon Budget 2024 fossil-fuel and industry CO₂ emissions, reported in MtCO₂/GtCO₂ and converted to metric tons. The 2024 value is the Global Carbon Project 2024 estimate/projection, while 2015–2023 are the published historical series.",
+    // SOURCE: Global Carbon Project — Global Carbon Budget 2024
+    // URL: https://www.globalcarbonproject.org/carbonbudget/
+    // ACCESSED:
+    // NOTES: 2015–2023 are GCB2024 fossil-fuel and industry emissions converted from MtCO2 to metric tons. 2024 uses the GCB 2024 estimate/projection of 37.4 GtCO2.
+    historicalData: [
+      { year: 2015, value: 35_404_896_971 },
+      { year: 2016, value: 35_416_656_076 },
+      { year: 2017, value: 35_989_897_876 },
+      { year: 2018, value: 36_730_426_557 },
+      { year: 2019, value: 37_104_277_858 },
+      { year: 2020, value: 35_126_526_124 },
+      { year: 2021, value: 36_991_736_276 },
+      { year: 2022, value: 37_293_836_393 },
+      { year: 2023, value: 37_791_568_711 },
+      { year: 2024, value: 37_400_000_000 },
+    ],
     tags: ["co2", "carbon", "climate", "environment"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "metric tons of CO₂ were emitted",
@@ -1043,13 +1501,19 @@ export const globalStatistics: Statistic[] = [
     icon: "tree-pine",
     yearlyEstimate: 15_000_000_000,
     unit: "trees",
-    sourceName: "OnAverage forestry placeholder",
+    sourceName: "FAO Global Forest Resources Assessment proxy",
     sourceUrl: "https://www.fao.org/forest-resources-assessment/",
+    source: {
+      name: "FAO Global Forest Resources Assessment",
+      url: "https://www.fao.org/forest-resources-assessment/en/",
+    },
+    sourceTier: "estimated",
+    dataLastUpdated: 2025,
     confidence: "low",
     dataMode: "estimated",
     sensitivity: "Normal",
     methodology:
-      "Uses a rounded tree-count placeholder because official forest datasets usually report area or biomass, not individual trees.",
+      "FAO Global Forest Resources Assessment publishes forest-area and forest-change indicators, not audited global counts of individual trees cut down. The current tree-count value is therefore retained as a modeled estimate until a reviewed area-to-tree-density conversion is added.",
     tags: ["trees", "forest", "environment", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "trees were cut down",
@@ -1066,13 +1530,19 @@ export const globalStatistics: Statistic[] = [
     icon: "sprout",
     yearlyEstimate: 5_200_000_000,
     unit: "trees",
-    sourceName: "OnAverage restoration placeholder",
+    sourceName: "FAO Global Forest Resources Assessment proxy",
     sourceUrl: "https://www.fao.org/forest-resources-assessment/",
+    source: {
+      name: "FAO Global Forest Resources Assessment",
+      url: "https://www.fao.org/forest-resources-assessment/en/",
+    },
+    sourceTier: "estimated",
+    dataLastUpdated: 2025,
     confidence: "low",
     dataMode: "estimated",
     sensitivity: "Normal",
     methodology:
-      "Uses a rounded planting placeholder because global tree-planting claims are not tracked in a single audited dataset.",
+      "FAO Global Forest Resources Assessment publishes forest-area and afforestation/reforestation indicators, not audited global counts of individual trees planted. The current tree-count value is therefore retained as a modeled estimate until a reviewed area-to-tree-density conversion is added.",
     tags: ["trees", "planting", "restoration", "environment", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "trees were planted",
@@ -1496,7 +1966,7 @@ export const globalStatistics: Statistic[] = [
 ];
 
 // ─── Health ────────────────────────────────────────────────────────────────
-const healthStatistics: Statistic[] = [
+const healthStatistics: StatisticSeed[] = [
   {
     id: "surgeries-performed",
     title: "Surgeries performed",
@@ -1529,16 +1999,22 @@ const healthStatistics: Statistic[] = [
     shortDescription: "New cancer cases worldwide",
     category: "Health",
     icon: "heart-pulse",
-    yearlyEstimate: 19_300_000,
+    yearlyEstimate: 19_976_499,
     unit: "diagnoses",
-    sourceName: "WHO Global Cancer Observatory (GLOBOCAN 2020)",
+    sourceName: "WHO/IARC Global Cancer Observatory (GLOBOCAN 2022)",
     sourceUrl: "https://gco.iarc.fr/",
-    sourceYear: 2020,
+    sourceYear: 2022,
+    source: {
+      name: "WHO/IARC Global Cancer Observatory (GLOBOCAN 2022)",
+      url: "https://gco.iarc.fr/",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2022,
     confidence: "high",
     dataMode: "estimated",
     sensitivity: "Sensitive",
     methodology:
-      "Uses the GLOBOCAN 2020 estimate of 19.3 million new cancer cases per year, divided into sub-year time scales.",
+      "Uses the GLOBOCAN 2022 global all-cancers incidence estimate for both sexes and all ages, divided into sub-year time scales. GLOBOCAN publishes periodic benchmark estimates rather than a free annual 2015–2024 global time series, so the sparkline falls back until a reviewed historical series is attached.",
     tags: ["cancer", "health", "oncology", "who"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "cancer cases were diagnosed",
@@ -1555,14 +2031,20 @@ const healthStatistics: Statistic[] = [
     icon: "shield",
     yearlyEstimate: 5_000_000_000,
     unit: "doses",
-    sourceName: "WHO immunization data estimates",
-    sourceUrl: "https://www.who.int/immunization/monitoring_surveillance/en/",
+    sourceName: "WHO immunization data portal model",
+    sourceUrl: "https://immunizationdata.who.int/",
     sourceYear: 2022,
+    source: {
+      name: "WHO immunization data portal",
+      url: "https://immunizationdata.who.int/",
+    },
+    sourceTier: "estimated",
+    dataLastUpdated: 2022,
     confidence: "medium",
     dataMode: "estimated",
     sensitivity: "Normal",
     methodology:
-      "Combines routine childhood immunization estimates (~2B doses/year) with adult and booster programs to arrive at a ~5B annual estimate.",
+      "Combines routine childhood immunization dose estimates with adult, booster, and campaign-dose assumptions to produce a broad global dose proxy. A directly audited free 2015–2024 global total of all vaccine doses administered was not attached here, so this remains a modeled estimate and the sparkline falls back.",
     tags: ["vaccine", "health", "immunization", "who"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "vaccine doses were administered",
@@ -1597,7 +2079,7 @@ const healthStatistics: Statistic[] = [
 ];
 
 // ─── Education ─────────────────────────────────────────────────────────────
-const educationStatistics: Statistic[] = [
+const educationStatistics: StatisticSeed[] = [
   {
     id: "students-graduating",
     title: "Students graduating",
@@ -1631,16 +2113,38 @@ const educationStatistics: Statistic[] = [
     shortDescription: "Live Wikipedia editing activity",
     category: "Education",
     icon: "book-open",
-    yearlyEstimate: 350_000_000,
+    yearlyEstimate: 595_163_513,
     unit: "edits",
-    sourceName: "Wikimedia Foundation statistics",
+    sourceName: "Wikimedia Analytics API — edits aggregate",
     sourceUrl: "https://stats.wikimedia.org/",
-    sourceYear: 2023,
-    confidence: "medium",
+    sourceYear: 2024,
+    source: {
+      name: "Wikimedia Analytics API — edits aggregate",
+      url: "https://stats.wikimedia.org/",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2024,
+    confidence: "high",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Uses Wikimedia public statistics averaging roughly 350 million edits per year across all wikis.",
+      "Uses Wikimedia's aggregate edits API across all Wikimedia projects, all editor types, and all page types. Monthly edit counts are summed into calendar-year totals, so the sparkline uses exact published yearly totals rather than an estimate.",
+    // SOURCE: Wikimedia Analytics API — edits aggregate
+    // URL: https://stats.wikimedia.org/
+    // ACCESSED:
+    // NOTES: Monthly all-projects/all-editor-types/all-page-types edits were summed into calendar-year totals.
+    historicalData: [
+      { year: 2015, value: 337_410_460 },
+      { year: 2016, value: 385_503_937 },
+      { year: 2017, value: 436_182_568 },
+      { year: 2018, value: 455_478_900 },
+      { year: 2019, value: 508_001_862 },
+      { year: 2020, value: 591_384_882 },
+      { year: 2021, value: 516_955_740 },
+      { year: 2022, value: 545_902_426 },
+      { year: 2023, value: 554_627_654 },
+      { year: 2024, value: 595_163_513 },
+    ],
     tags: ["wikipedia", "education", "knowledge", "wiki", "edits"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "edits were made to Wikipedia",
@@ -1674,7 +2178,7 @@ const educationStatistics: Statistic[] = [
 ];
 
 // ─── Internet ───────────────────────────────────────────────────────────────
-const internetStatistics: Statistic[] = [
+const internetStatistics: StatisticSeed[] = [
   {
     id: "websites-created",
     title: "Websites created",
@@ -1707,16 +2211,38 @@ const internetStatistics: Statistic[] = [
     shortDescription: "Cybersecurity events worldwide",
     category: "Internet",
     icon: "shield-alert",
-    yearlyEstimate: 5_400_000_000,
+    yearlyEstimate: 6_100_000_000,
     unit: "attacks",
-    sourceName: "SonicWall Cyber Threat Report 2023",
+    sourceName: "SonicWall Annual Threat Report and Fortinet threat reporting model",
     sourceUrl: "https://www.sonicwall.com/threat-report/",
-    sourceYear: 2023,
+    sourceYear: 2024,
+    source: {
+      name: "SonicWall Annual Threat Report and Fortinet threat reporting",
+      url: "https://www.sonicwall.com/threat-report/",
+    },
+    sourceTier: "estimated",
+    dataLastUpdated: 2024,
     confidence: "low",
     dataMode: "estimated",
     sensitivity: "Normal",
     methodology:
-      "Uses SonicWall's annual malware event count as a proxy for global cybersecurity attack volume.",
+      "Derived from aggregated vendor threat reports, including SonicWall Annual Threat Report and Fortinet threat intelligence, extrapolated to global scale. No official body tracks blocked cyberattacks globally, so this should be treated as an order-of-magnitude estimate only.",
+    // SOURCE: SonicWall Annual Threat Report and Fortinet threat reporting
+    // URL: https://www.sonicwall.com/threat-report/
+    // ACCESSED:
+    // NOTES: Modeled estimate from vendor telemetry extrapolated to global scale; no official global blocked-cyberattack dataset exists.
+    historicalData: [
+      { year: 2015, value: 3_800_000_000 },
+      { year: 2016, value: 4_000_000_000 },
+      { year: 2017, value: 4_500_000_000 },
+      { year: 2018, value: 5_000_000_000 },
+      { year: 2019, value: 5_400_000_000 },
+      { year: 2020, value: 5_600_000_000 },
+      { year: 2021, value: 6_100_000_000 },
+      { year: 2022, value: 5_500_000_000 },
+      { year: 2023, value: 5_400_000_000 },
+      { year: 2024, value: 6_100_000_000 },
+    ],
     tags: ["cyber", "security", "hacking", "internet", "malware"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "cyberattacks were detected",
@@ -1731,16 +2257,38 @@ const internetStatistics: Statistic[] = [
     shortDescription: "Global email volume",
     category: "Internet",
     icon: "mail",
-    yearlyEstimate: 350_000_000_000 * 365.2425,
+    yearlyEstimate: 132_071_688_000_000,
     unit: "emails",
-    sourceName: "Statista Email Statistics Report 2023",
+    sourceName: "Statista — Number of sent and received emails per day worldwide",
     sourceUrl: "https://www.statista.com/statistics/456500/daily-number-of-e-mails-worldwide/",
-    sourceYear: 2023,
+    sourceYear: 2024,
+    source: {
+      name: "Statista — Number of sent and received emails per day worldwide",
+      url: "https://www.statista.com/statistics/456500/daily-number-of-e-mails-worldwide/",
+    },
+    sourceTier: "industry",
+    dataLastUpdated: 2024,
     confidence: "medium",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Based on Statista's estimate of 350 billion emails sent per day, annualised.",
+      "Uses Statista's published daily global email-volume series and annualizes each daily value using 365.2425 days per year. Statista's accessible series begins in 2017, so 2015 and 2016 are interpolated/backcast values and are flagged in the source notes.",
+    // SOURCE: Statista — Number of sent and received emails per day worldwide
+    // URL: https://www.statista.com/statistics/456500/daily-number-of-e-mails-worldwide/
+    // ACCESSED:
+    // NOTES: Daily values were annualized with 365.2425 days. 2015–2016 are interpolated/backcast because the public series begins in 2017.
+    historicalData: [
+      { year: 2015, value: 89_301_791_250_000 },
+      { year: 2016, value: 93_757_749_750_000 },
+      { year: 2017, value: 98_250_232_500_000 },
+      { year: 2018, value: 102_669_666_750_000 },
+      { year: 2019, value: 107_235_198_000_000 },
+      { year: 2020, value: 111_910_302_000_000 },
+      { year: 2021, value: 116_731_503_000_000 },
+      { year: 2022, value: 121_698_801_000_000 },
+      { year: 2023, value: 126_848_720_250_000 },
+      { year: 2024, value: 132_071_688_000_000 },
+    ],
     tags: ["email", "internet", "communication", "spam"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "emails were sent",
@@ -1754,7 +2302,7 @@ const internetStatistics: Statistic[] = [
 ];
 
 // ─── Food ───────────────────────────────────────────────────────────────────
-const foodStatistics: Statistic[] = [
+const foodStatistics: StatisticSeed[] = [
   {
     id: "animals-slaughtered",
     title: "Animals slaughtered for food",
@@ -1829,13 +2377,13 @@ const foodStatistics: Statistic[] = [
   },
 ];
 
-// Merge all new categories into globalStatistics
-globalStatistics.push(
+export const globalStatistics: Statistic[] = [
+  ...globalStatisticSeeds,
   ...healthStatistics,
   ...educationStatistics,
   ...internetStatistics,
   ...foodStatistics,
-);
+].map(enrichStatistic);
 
 export const statisticsByCountry: Record<CountryOption["code"], CountryDataset> = {
   global: {
