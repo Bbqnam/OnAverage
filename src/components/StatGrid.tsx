@@ -1,4 +1,4 @@
-import { Hourglass } from "lucide-react";
+import { Hourglass, Plus, X } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { getHighlightStatistics, groupStatisticsByCategory } from "../lib/grouping";
@@ -12,7 +12,11 @@ interface StatGridProps {
   now: number;
   timeScale: TimeScale;
   highlightedStatisticId?: string | null;
+  favorites?: string[];
+  myWorldIds?: string[];
   onOpenStatistic: (statistic: Statistic) => void;
+  onToggleFavorite?: (id: string) => void;
+  onToggleMyWorld?: (id: string) => void;
 }
 
 export function StatGrid({
@@ -22,7 +26,11 @@ export function StatGrid({
   now,
   timeScale,
   highlightedStatisticId,
+  favorites = [],
+  myWorldIds = [],
   onOpenStatistic,
+  onToggleFavorite,
+  onToggleMyWorld,
 }: StatGridProps) {
   if (dataset.status === "coming-soon") {
     return (
@@ -53,6 +61,52 @@ export function StatGrid({
     statistics.filter((statistic) => !highlightIds.has(statistic.id)),
   );
 
+  function renderCard(statistic: Statistic, showCat: boolean) {
+    return (
+      <div key={statistic.id} className="group/card relative">
+        <StatCard
+          statistic={statistic}
+          openedAt={openedAt}
+          now={now}
+          timeScale={timeScale}
+          isHighlighted={highlightedStatisticId === statistic.id}
+          showCategory={showCat}
+          isFavorite={favorites.includes(statistic.id)}
+          onOpen={onOpenStatistic}
+          onToggleFavorite={onToggleFavorite}
+        />
+        {/* Add to My World button */}
+        {onToggleMyWorld && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleMyWorld(statistic.id);
+            }}
+            title={myWorldIds.includes(statistic.id) ? "Remove from My World" : "Add to My World"}
+            className={`absolute bottom-2 left-2 z-10 inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-[10px] font-medium transition-opacity ${
+              myWorldIds.includes(statistic.id)
+                ? "border-primary/30 bg-primary/10 text-primary opacity-100"
+                : "border-border bg-background text-muted-foreground opacity-0 group-hover/card:opacity-80 hover:!opacity-100"
+            }`}
+          >
+            {myWorldIds.includes(statistic.id) ? (
+              <>
+                <X className="h-2.5 w-2.5" />
+                My World
+              </>
+            ) : (
+              <>
+                <Plus className="h-2.5 w-2.5" />
+                My World
+              </>
+            )}
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {highlights.length > 0 && (
@@ -65,18 +119,7 @@ export function StatGrid({
             <span className="text-sm text-muted-foreground">{highlights.length} signals</span>
           </div>
           <div className={getBalancedGridClass(highlights.length)}>
-            {highlights.map((statistic) => (
-              <StatCard
-                key={statistic.id}
-                statistic={statistic}
-                openedAt={openedAt}
-                now={now}
-                timeScale={timeScale}
-                isHighlighted={highlightedStatisticId === statistic.id}
-                showCategory={true} // ← SHOW category here since cards are mixed
-                onOpen={onOpenStatistic}
-              />
-            ))}
+            {highlights.map((statistic) => renderCard(statistic, true))}
           </div>
         </section>
       )}
@@ -94,24 +137,13 @@ export function StatGrid({
                   <p className="text-sm text-muted-foreground">
                     {group.total > group.statistics.length
                       ? `${group.statistics.length} of ${group.total} shown`
-                      : `${group.total} questions`}
+                      : `${group.total} signals`}
                   </p>
                 </div>
               </div>
             </div>
             <div className={getBalancedGridClass(group.statistics.length)}>
-              {group.statistics.map((statistic) => (
-                <StatCard
-                  key={statistic.id}
-                  statistic={statistic}
-                  openedAt={openedAt}
-                  now={now}
-                  timeScale={timeScale}
-                  isHighlighted={highlightedStatisticId === statistic.id}
-                  showCategory={false} // ← HIDE category here, section header already says it
-                  onOpen={onOpenStatistic}
-                />
-              ))}
+              {group.statistics.map((statistic) => renderCard(statistic, false))}
             </div>
           </section>
         );
