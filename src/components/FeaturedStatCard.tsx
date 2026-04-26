@@ -108,16 +108,16 @@ export function FeaturedStatCard({
     <section
       className={`relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-subtle ${categoryStyle.leftBorder}`}
     >
-      <div className="grid gap-0 xl:grid-cols-[minmax(0,0.82fr)_minmax(420px,1.18fr)]">
+      <div className="grid gap-0 xl:grid-cols-[minmax(0,0.75fr)_minmax(380px,1.25fr)]">
         <button
           type="button"
           onClick={() => onOpen(activeStatistic)}
-          className="flex min-w-0 items-center gap-3 px-4 py-4 text-left transition hover:bg-accent/30 sm:gap-4"
+          className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-3 px-3 py-3 text-left transition hover:bg-accent/30 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
         >
           <div
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
           >
-            <StatIcon name={activeStatistic.icon} className="h-5 w-5" />
+            <StatIcon name={activeStatistic.icon} className="h-4 w-4" />
           </div>
 
           <div className="min-w-0 flex-1">
@@ -126,22 +126,22 @@ export function FeaturedStatCard({
             >
               Random live fact
             </p>
-            <h2 className="truncate text-lg font-semibold leading-snug sm:text-xl">
+            <h2 className="truncate text-base font-semibold leading-snug sm:text-lg">
               {activeStatistic.title}
             </h2>
-            <p className="truncate text-xs text-muted-foreground sm:text-sm">
+            <p className="truncate text-xs text-muted-foreground">
               {activeStatistic.shortDescription}
             </p>
           </div>
 
-          <div className="shrink-0 text-right">
-            <p className="text-2xl font-semibold tabular-nums text-foreground/90 sm:text-3xl">
+          <div className="col-span-2 min-w-0 text-left sm:col-span-1 sm:text-right">
+            <p className="text-2xl font-semibold tabular-nums leading-none text-foreground/90">
               {formatLargeNumber(displayValue, displayValue >= 100_000)}
             </p>
-            <p className="text-xs text-muted-foreground sm:text-sm">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               {getRateText(activeStatistic, timeScale)}
             </p>
-            <div className="mt-1 flex justify-end gap-1.5">
+            <div className="mt-1 flex justify-start gap-1.5 sm:justify-end">
               <ConfidenceBadge confidence={activeStatistic.confidence} />
               <DataModeBadge dataMode={activeStatistic.dataMode} />
             </div>
@@ -149,7 +149,7 @@ export function FeaturedStatCard({
         </button>
 
         {dashboardStats.supporting.length > 0 && (
-          <div className="grid min-w-0 grid-cols-2 gap-2 border-t border-border p-3 md:grid-cols-3 xl:border-l xl:border-t-0">
+          <div className="grid min-w-0 grid-cols-2 gap-1.5 border-t border-border p-2.5 md:grid-cols-3 xl:border-l xl:border-t-0">
             {dashboardStats.supporting.map((supportingStatistic) => (
               <SupportingStatButton
                 key={supportingStatistic.id}
@@ -189,20 +189,20 @@ function SupportingStatButton({
     <button
       type="button"
       onClick={() => onOpen(statistic)}
-      className="flex min-w-0 items-center gap-2 rounded-md border border-border/70 bg-background/50 px-2.5 py-2 text-left transition hover:bg-accent"
+      className="flex min-w-0 items-center gap-2 rounded-md border border-border/70 bg-background/50 px-2 py-1.5 text-left transition hover:bg-accent"
       aria-label={`Open ${statistic.title} details`}
     >
       <div
-        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
+        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
       >
-        <StatIcon name={statistic.icon} className="h-4 w-4" />
+        <StatIcon name={statistic.icon} className="h-3.5 w-3.5" />
       </div>
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs text-muted-foreground">
           {statistic.shortTitle}
         </p>
-        <p className="truncate text-base font-semibold tabular-nums text-foreground">
+        <p className="truncate text-sm font-semibold tabular-nums text-foreground">
           {formatLargeNumber(displayValue, displayValue >= 100_000)}
         </p>
         <p className="truncate text-[11px] text-muted-foreground">

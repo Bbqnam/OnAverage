@@ -43,8 +43,8 @@ const tabIcons: Record<DashboardTab, LucideIcon> = {
 
 export function CategoryTabs({ selectedTab, statistics, onTabChange }: CategoryTabsProps) {
   return (
-    <nav className="min-w-0 overflow-x-auto rounded-lg border border-border bg-card p-1 shadow-subtle">
-      <div className="flex w-max gap-1">
+    <nav className="no-scrollbar min-w-0 overflow-x-auto rounded-lg border border-border bg-card p-0.5 shadow-subtle">
+      <div className="flex w-max gap-0.5">
         {dashboardTabs.map((tab) => {
           const count =
             tab === "All"
@@ -58,7 +58,7 @@ export function CategoryTabs({ selectedTab, statistics, onTabChange }: CategoryT
               key={tab}
               type="button"
               onClick={() => onTabChange(tab)}
-              className={`flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition sm:text-sm ${
+              className={`flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition ${
                 isSelected
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -68,7 +68,7 @@ export function CategoryTabs({ selectedTab, statistics, onTabChange }: CategoryT
               <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
               {tab}
               <span
-                className={`rounded-full px-1.5 py-0.5 text-[10px] ${
+                className={`rounded-full px-1.5 py-0.5 text-[10px] leading-none ${
                   isSelected ? "bg-primary-foreground/15" : "bg-muted text-muted-foreground"
                 }`}
               >

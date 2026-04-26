@@ -12,8 +12,8 @@ export function CountrySelector({
   onCountryChange,
 }: CountrySelectorProps) {
   return (
-    <label className="flex h-10 min-w-0 items-center gap-2 rounded-lg border border-input bg-card px-3 text-sm text-card-foreground shadow-subtle">
-      <Globe2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+    <label className="flex h-9 min-w-[9rem] shrink-0 items-center gap-2 rounded-lg border border-input bg-card px-2.5 text-sm text-card-foreground shadow-subtle">
+      <Globe2 className="h-3.5 w-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
       <span className="sr-only">Country</span>
       <select
         value={selectedCountry}

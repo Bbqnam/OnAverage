@@ -16,7 +16,7 @@ const swatches: Record<AccentTheme, string> = {
 
 export function AccentSelector({ value, onChange }: AccentSelectorProps) {
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-1">
+    <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-0.5">
       {accentThemes.map((accent) => {
         const isSelected = value === accent;
 
@@ -33,7 +33,7 @@ export function AccentSelector({ value, onChange }: AccentSelectorProps) {
             title={`${accent[0].toUpperCase()}${accent.slice(1)} accent`}
           >
             <span
-              className={`h-4 w-4 rounded-full transition ${
+              className={`h-3.5 w-3.5 rounded-full transition ${
                 isSelected ? "scale-110 shadow-sm" : ""
               } ${swatches[accent]}`}
               aria-hidden="true"

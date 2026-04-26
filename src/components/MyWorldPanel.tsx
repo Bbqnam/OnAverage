@@ -11,7 +11,6 @@ interface MyWorldPanelProps {
   timeScale: TimeScale;
   onOpen: (statistic: Statistic) => void;
   onToggleFavorite: (id: string) => void;
-  onToggleMyWorld: (id: string) => void;
   onClose: () => void;
 }
 
@@ -24,7 +23,6 @@ export function MyWorldPanel({
   timeScale,
   onOpen,
   onToggleFavorite,
-  onToggleMyWorld,
   onClose,
 }: MyWorldPanelProps) {
   const myWorldStats = myWorldIds
@@ -36,11 +34,13 @@ export function MyWorldPanel({
     .filter((s): s is Statistic => Boolean(s));
 
   const isEmpty = myWorldStats.length === 0;
+  const unpinnedFavoriteStats = favoriteStats.filter((stat) => !myWorldIds.includes(stat.id));
+  const showFavoritesInMainArea = isEmpty && favoriteStats.length > 0;
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-subtle">
+    <div className="rounded-lg border border-border bg-card shadow-subtle">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+      <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
         <div className="flex items-center gap-2">
           <Globe className="h-4 w-4 text-primary" />
           <h2 className="text-sm font-semibold">My World</h2>
@@ -59,46 +59,16 @@ export function MyWorldPanel({
       </div>
 
       {/* My World grid */}
-      <div className="p-4">
-        {isEmpty ? (
-          <div className="rounded-lg border border-dashed border-border py-8 text-center">
-            <Globe className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
-            <p className="text-sm font-medium text-muted-foreground">
-              Your custom dashboard is empty
-            </p>
-            <p className="mt-1 text-xs text-muted-foreground/70">
-              Click the ⊕ on any card to pin up to 10 signals here.
-            </p>
-          </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {myWorldStats.map((stat) => (
-              <StatCard
-                key={stat.id}
-                statistic={stat}
-                openedAt={openedAt}
-                now={now}
-                timeScale={timeScale}
-                isFavorite={favorites.includes(stat.id)}
-                isInMyWorld
-                onOpen={onOpen}
-                onToggleFavorite={onToggleFavorite}
-                onToggleMyWorld={onToggleMyWorld}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Favorites section */}
-        {favoriteStats.length > 0 && (
-          <div className="mt-5">
+      <div className="p-3">
+        {showFavoritesInMainArea ? (
+          <div>
             <div className="mb-2 flex items-center gap-1.5">
               <Star className="h-3.5 w-3.5 text-amber-400" fill="currentColor" />
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Favorites
               </h3>
             </div>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {favoriteStats.map((stat) => (
                 <StatCard
                   key={stat.id}
@@ -107,10 +77,59 @@ export function MyWorldPanel({
                   now={now}
                   timeScale={timeScale}
                   isFavorite
-                  isInMyWorld={myWorldIds.includes(stat.id)}
                   onOpen={onOpen}
                   onToggleFavorite={onToggleFavorite}
-                  onToggleMyWorld={onToggleMyWorld}
+                />
+              ))}
+            </div>
+          </div>
+        ) : isEmpty ? (
+          <div className="rounded-lg border border-dashed border-border py-6 text-center">
+            <Globe className="mx-auto mb-2 h-7 w-7 text-muted-foreground/40" />
+            <p className="text-sm font-medium text-muted-foreground">
+              Your custom dashboard is empty
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground/70">
+              Click the ⊕ on any card to pin up to 10 signals here.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {myWorldStats.map((stat) => (
+              <StatCard
+                key={stat.id}
+                statistic={stat}
+                openedAt={openedAt}
+                now={now}
+                timeScale={timeScale}
+                isFavorite={favorites.includes(stat.id)}
+                onOpen={onOpen}
+                onToggleFavorite={onToggleFavorite}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Favorites section */}
+        {!isEmpty && unpinnedFavoriteStats.length > 0 && (
+          <div className="mt-4">
+            <div className="mb-2 flex items-center gap-1.5">
+              <Star className="h-3.5 w-3.5 text-amber-400" fill="currentColor" />
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Favorites
+              </h3>
+            </div>
+            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {unpinnedFavoriteStats.map((stat) => (
+                <StatCard
+                  key={stat.id}
+                  statistic={stat}
+                  openedAt={openedAt}
+                  now={now}
+                  timeScale={timeScale}
+                  isFavorite
+                  onOpen={onOpen}
+                  onToggleFavorite={onToggleFavorite}
                 />
               ))}
             </div>
@@ -118,7 +137,7 @@ export function MyWorldPanel({
         )}
       </div>
 
-      <div className="border-t border-border px-4 py-2.5">
+      <div className="border-t border-border px-3 py-2">
         <p className="text-[11px] text-muted-foreground">
           Preferences are saved locally in your browser.
         </p>

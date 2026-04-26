@@ -1,7 +1,7 @@
 import { Hourglass } from "lucide-react";
 import { StatCard } from "./StatCard";
 import { getCategoryStyle } from "../lib/categoryStyles";
-import { getHighlightStatistics, groupStatisticsByCategory } from "../lib/grouping";
+import { groupStatisticsByCategory } from "../lib/grouping";
 import { getBalancedGridClass } from "../lib/layout";
 import type { CountryDataset, Statistic, TimeScale } from "../types/statistic";
 
@@ -13,10 +13,8 @@ interface StatGridProps {
   timeScale: TimeScale;
   highlightedStatisticId?: string | null;
   favorites?: string[];
-  myWorldIds?: string[];
   onOpenStatistic: (statistic: Statistic) => void;
   onToggleFavorite?: (id: string) => void;
-  onToggleMyWorld?: (id: string) => void;
 }
 
 export function StatGrid({
@@ -27,18 +25,16 @@ export function StatGrid({
   timeScale,
   highlightedStatisticId,
   favorites = [],
-  myWorldIds = [],
   onOpenStatistic,
   onToggleFavorite,
-  onToggleMyWorld,
 }: StatGridProps) {
   if (dataset.status === "coming-soon") {
     return (
-      <section className="rounded-xl border border-dashed border-border bg-card p-8 text-center shadow-subtle">
+      <section className="rounded-lg border border-dashed border-border bg-card p-6 text-center shadow-subtle">
         <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
           <Hourglass className="h-5 w-5" aria-hidden="true" />
         </div>
-        <h2 className="mt-4 text-xl font-semibold">{dataset.name} is coming soon</h2>
+        <h2 className="mt-3 text-lg font-semibold">{dataset.name} is coming soon</h2>
         <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-muted-foreground">
           The country data structure is ready, but Phase 1 only ships realistic global placeholder
           estimates. This keeps the MVP honest while leaving a clean path for regional datasets.
@@ -49,17 +45,13 @@ export function StatGrid({
 
   if (statistics.length === 0) {
     return (
-      <section className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground shadow-subtle">
+      <section className="rounded-lg border border-border bg-card p-6 text-center text-sm text-muted-foreground shadow-subtle">
         No statistics match those filters.
       </section>
     );
   }
 
-  const highlights = getHighlightStatistics(statistics);
-  const highlightIds = new Set(highlights.map((statistic) => statistic.id));
-  const groupedStatistics = groupStatisticsByCategory(
-    statistics.filter((statistic) => !highlightIds.has(statistic.id)),
-  );
+  const groupedStatistics = groupStatisticsByCategory(statistics);
 
   function renderCard(statistic: Statistic, showCat: boolean) {
     return (
@@ -72,42 +64,25 @@ export function StatGrid({
         isHighlighted={highlightedStatisticId === statistic.id}
         showCategory={showCat}
         isFavorite={favorites.includes(statistic.id)}
-        isInMyWorld={myWorldIds.includes(statistic.id)}
         onOpen={onOpenStatistic}
         onToggleFavorite={onToggleFavorite}
-        onToggleMyWorld={onToggleMyWorld}
       />
     );
   }
 
   return (
-    <div className="space-y-6">
-      {highlights.length > 0 && (
-        <section>
-          <div className="mb-3 flex items-end justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Start here</p>
-              <h2 className="text-xl font-semibold tracking-normal">Highlights</h2>
-            </div>
-            <span className="text-sm text-muted-foreground">{highlights.length} signals</span>
-          </div>
-          <div className={getBalancedGridClass(highlights.length)}>
-            {highlights.map((statistic) => renderCard(statistic, true))}
-          </div>
-        </section>
-      )}
-
+    <div className="space-y-5">
       {groupedStatistics.map((group) => {
         const categoryStyle = getCategoryStyle(group.category);
 
         return (
           <section key={group.category}>
-            <div className="mb-3 flex items-end justify-between gap-3">
+            <div className="mb-2 flex items-end justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className={`h-8 w-1 rounded-full ${categoryStyle.line}`} />
+                <span className={`h-7 w-1 rounded-full ${categoryStyle.line}`} />
                 <div>
-                  <h2 className="text-xl font-semibold tracking-normal">{group.category}</h2>
-                  <p className="text-sm text-muted-foreground">
+                  <h2 className="text-lg font-semibold tracking-normal">{group.category}</h2>
+                  <p className="text-xs text-muted-foreground">
                     {group.total > group.statistics.length
                       ? `${group.statistics.length} of ${group.total} shown`
                       : `${group.total} signals`}

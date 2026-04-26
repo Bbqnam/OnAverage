@@ -90,11 +90,11 @@ export function SinceOpenedExplorer({
   const factCategoryStyle = getCategoryStyle(factStatistic.category);
 
   return (
-    <section className="rounded-lg border border-border bg-card p-3 text-card-foreground shadow-subtle">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <section className="rounded-lg border border-border bg-card p-2.5 text-card-foreground shadow-subtle">
+      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
-            <Activity className="h-4 w-4" aria-hidden="true" />
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
+            <Activity className="h-3.5 w-3.5" aria-hidden="true" />
           </div>
 
           <div>
@@ -105,7 +105,7 @@ export function SinceOpenedExplorer({
           </div>
         </div>
 
-        <div className="flex rounded-lg border border-border bg-background p-1">
+        <div className="flex w-max rounded-lg border border-border bg-background p-0.5">
           {(["mixed", "live"] as SinceOpenedMode[]).map((option) => {
             const isSelected = option === mode;
 
@@ -114,7 +114,7 @@ export function SinceOpenedExplorer({
                 key={option}
                 type="button"
                 onClick={() => onModeChange(option)}
-                className={`h-8 rounded-md px-3 text-xs font-medium transition ${
+                className={`h-8 rounded-md px-2.5 text-xs font-medium transition ${
                   isSelected
                     ? "bg-primary text-primary-foreground"
                     : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -128,20 +128,21 @@ export function SinceOpenedExplorer({
         </div>
       </div>
 
-      <div className="mt-3 grid gap-2 md:grid-cols-1">
-<div className="rounded-md border border-primary/20 bg-primary/5 px-3 py-3 flex flex-col items-center justify-center text-center">    <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-      Total movement
-    </p>
-    <p className="mt-1 text-sm text-muted-foreground">
-      <strong className="text-lg text-foreground">
-        {formatLargeNumber(totalSinceOpened, totalSinceOpened >= 100_000)}
-      </strong>{" "}
-      modeled events since you opened
-    </p>
-  </div>
-</div>
+      <div className="mt-2.5">
+        <div className="flex flex-col items-center justify-center rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 text-center">
+          <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Total movement
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            <strong className="text-base text-foreground">
+              {formatLargeNumber(totalSinceOpened, totalSinceOpened >= 100_000)}
+            </strong>{" "}
+            modeled events since you opened
+          </p>
+        </div>
+      </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-2.5 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
         {highlights.map((statistic) => {
           const count = calculateSincePageLoad(
             statistic.yearlyEstimate,
@@ -155,19 +156,19 @@ export function SinceOpenedExplorer({
               key={statistic.id}
               type="button"
               onClick={() => onOpenStatistic(statistic)}
-              className={`flex items-center gap-2 rounded-md border border-border bg-background px-2.5 py-2 text-left transition hover:-translate-y-0.5 ${categoryStyle.hover} ${categoryStyle.glow}`}
+              className={`flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-left transition hover:-translate-y-0.5 ${categoryStyle.hover} ${categoryStyle.glow}`}
             >
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
               >
-                <StatIcon name={statistic.icon} className="h-4 w-4" />
+                <StatIcon name={statistic.icon} className="h-3.5 w-3.5" />
               </div>
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-base font-semibold">
+                <p className="truncate text-sm font-semibold">
                   {formatLargeNumber(count, count >= 100_000)}
                 </p>
-                <p className="truncate text-sm text-muted-foreground">
+                <p className="truncate text-xs text-muted-foreground">
                   {statistic.sinceOpenedLabel}
                 </p>
               </div>

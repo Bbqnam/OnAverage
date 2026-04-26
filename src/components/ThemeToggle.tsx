@@ -13,8 +13,8 @@ export function ThemeToggle() {
   const { mode, accent, setMode, setAccent } = useTheme();
 
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <div className="flex rounded-lg border border-border bg-card p-1 shadow-subtle">
+    <div className="flex shrink-0 items-center gap-2">
+      <div className="flex rounded-lg border border-border bg-card p-0.5 shadow-subtle">
         {themeModes.map((themeMode) => {
           const Icon = modeIcons[themeMode];
           const isSelected = mode === themeMode;
@@ -24,7 +24,7 @@ export function ThemeToggle() {
               key={themeMode}
               type="button"
               onClick={() => setMode(themeMode)}
-              className={`flex h-8 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium capitalize transition ${
+              className={`flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium capitalize transition ${
                 isSelected
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
@@ -32,7 +32,7 @@ export function ThemeToggle() {
               aria-pressed={isSelected}
             >
               <Icon className="h-3.5 w-3.5" aria-hidden="true" />
-              {themeMode}
+              <span className="hidden sm:inline">{themeMode}</span>
             </button>
           );
         })}

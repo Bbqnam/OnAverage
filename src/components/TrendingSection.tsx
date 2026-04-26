@@ -18,8 +18,8 @@ export function TrendingSection({ statistics, onOpenStatistic }: TrendingSection
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card p-3 text-card-foreground shadow-subtle">
-      <div className="mb-3 flex items-center justify-between gap-3">
+    <section className="rounded-lg border border-border bg-card p-2.5 text-card-foreground shadow-subtle">
+      <div className="mb-2.5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Flame className="h-4 w-4 text-primary" aria-hidden="true" />
           <h2 className="text-sm font-semibold">Trending now</h2>
@@ -36,12 +36,12 @@ export function TrendingSection({ statistics, onOpenStatistic }: TrendingSection
               key={statistic.id}
               type="button"
               onClick={() => onOpenStatistic(statistic)}
-              className={`flex min-w-0 items-center gap-2 rounded-md border border-border bg-background px-2.5 py-2 text-left transition hover:-translate-y-0.5 ${categoryStyle.hover} ${categoryStyle.glow}`}
+              className={`flex min-w-0 items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-left transition hover:-translate-y-0.5 ${categoryStyle.hover} ${categoryStyle.glow}`}
             >
               <div
-                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
               >
-                <StatIcon name={statistic.icon} />
+                <StatIcon name={statistic.icon} className="h-3.5 w-3.5" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{statistic.title}</p>

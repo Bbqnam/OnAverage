@@ -26,7 +26,6 @@ import {
   loadPreferences,
   savePreferences,
   toggleFavorite,
-  toggleMyWorld,
 } from "./lib/preferences";
 import type {
   CountryCode,
@@ -75,15 +74,29 @@ function App() {
 
   const dataset = statisticsByCountry[selectedCountry];
 
-  const filteredStatistics = useMemo(() => {
+  const trimmedSearchTerm = searchTerm.trim();
+
+  const searchResults = useMemo(() => {
     if (dataset.status !== "available") return [];
     return filterStatistics(dataset.statistics, {
       searchTerm,
+      selectedTab: "All",
+      confidence: "all",
+      dataMode: "all",
+    });
+  }, [dataset, searchTerm]);
+
+  const isSearchMode = trimmedSearchTerm.length > 0 && searchResults.length > 0;
+
+  const filteredStatistics = useMemo(() => {
+    if (dataset.status !== "available") return [];
+    return filterStatistics(dataset.statistics, {
+      searchTerm: isSearchMode ? searchTerm : "",
       selectedTab,
       confidence: "all",
       dataMode: "all",
     });
-  }, [dataset, searchTerm, selectedTab]);
+  }, [dataset, isSearchMode, searchTerm, selectedTab]);
 
   const trendingStatistics = useMemo(
     () => getTrendingStats(dataset.statistics, trendingSeed),
@@ -114,10 +127,6 @@ function App() {
     setPrefs((p) => toggleFavorite(p, id));
   }
 
-  function handleToggleMyWorld(id: string) {
-    setPrefs((p) => toggleMyWorld(p, id));
-  }
-
   function togglePanel(panel: ActivePanel) {
     setActivePanel((cur) => (cur === panel ? "none" : panel));
   }
@@ -131,180 +140,201 @@ function App() {
         onSearchChange={setSearchTerm}
       />
 
-      <section className="flex flex-col gap-2 lg:flex-row lg:items-center">
-        <div className="min-w-0 flex-1">
-          <CategoryTabs
-            selectedTab={selectedTab}
-            statistics={dataset.statistics}
-            onTabChange={setSelectedTab}
+      {isSearchMode ? (
+        <>
+          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+            <span>
+              {searchResults.length} result{searchResults.length === 1 ? "" : "s"} for “{trimmedSearchTerm}”
+            </span>
+          </div>
+
+          <StatGrid
+            dataset={dataset}
+            statistics={searchResults}
+            openedAt={openedAt}
+            now={now}
+            timeScale={selectedScale}
+            highlightedStatisticId={highlightedStatisticId}
+            onOpenStatistic={openStatistic}
+            favorites={prefs.favorites}
+            onToggleFavorite={handleToggleFavorite}
           />
-        </div>
-        <div className="min-w-0 lg:shrink-0">
-          <TimeScaleToggle selectedScale={selectedScale} onScaleChange={setSelectedScale} />
-        </div>
-      </section>
+        </>
+      ) : (
+        <>
+          <section className="grid min-w-0 gap-2 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+            <div className="min-w-0 flex-1">
+              <CategoryTabs
+                selectedTab={selectedTab}
+                statistics={dataset.statistics}
+                onTabChange={setSelectedTab}
+              />
+            </div>
+            <div className="min-w-0 lg:shrink-0">
+              <TimeScaleToggle selectedScale={selectedScale} onScaleChange={setSelectedScale} />
+            </div>
+          </section>
 
-      {/* Control bar */}
-      <section className="rounded-lg border border-border bg-card px-3 py-2.5 text-card-foreground shadow-subtle">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-sm font-semibold tracking-normal">World overview</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Live-feeling counters from average yearly estimates.
-            </p>
+          {/* Control bar */}
+          <section className="rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-subtle">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold tracking-normal">World overview</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Live-feeling counters from average yearly estimates.
+                </p>
+              </div>
+              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+                {/* Shuffle / surprise */}
+                <button
+                  type="button"
+                  onClick={showRandomStatistic}
+                  className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground transition hover:opacity-90"
+                >
+                  <Shuffle className="h-3.5 w-3.5" aria-hidden="true" />
+                  Surprise me
+                </button>
+
+                {/* Since I was born */}
+                <button
+                  type="button"
+                  onClick={() => setShowSinceBorn(true)}
+                  className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground transition hover:bg-accent"
+                >
+                  <Baby className="h-3.5 w-3.5" aria-hidden="true" />
+                  Since I was born
+                </button>
+
+                {/* My World */}
+                <button
+                  type="button"
+                  onClick={() => togglePanel("myworld")}
+                  className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition ${
+                    activePanel === "myworld"
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <Globe className="h-3.5 w-3.5" aria-hidden="true" />
+                  My World{prefs.myWorldIds.length > 0 && ` (${prefs.myWorldIds.length})`}
+                </button>
+
+                {/* Compare */}
+                <button
+                  type="button"
+                  onClick={() => togglePanel("compare")}
+                  className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition ${
+                    activePanel === "compare"
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  Compare
+                </button>
+
+                {/* Share snapshot */}
+                <button
+                  type="button"
+                  onClick={() => togglePanel("snapshot")}
+                  className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition ${
+                    activePanel === "snapshot"
+                      ? "border-primary/30 bg-primary/10 text-primary"
+                      : "border-border bg-background text-foreground hover:bg-accent"
+                  }`}
+                >
+                  <Camera className="h-3.5 w-3.5" aria-hidden="true" />
+                  Share
+                </button>
+              </div>
+            </div>
+          </section>
+
+          {/* My World Panel */}
+          {activePanel === "myworld" && (
+            <MyWorldPanel
+              statistics={dataset.statistics}
+              myWorldIds={prefs.myWorldIds}
+              favorites={prefs.favorites}
+              openedAt={openedAt}
+              now={now}
+              timeScale={selectedScale}
+              onOpen={openStatistic}
+              onToggleFavorite={handleToggleFavorite}
+              onClose={() => setActivePanel("none")}
+            />
+          )}
+
+          {/* Compare Panel */}
+          {activePanel === "compare" && (
+            <CompareSignals
+              statistics={dataset.statistics}
+              timeScale={selectedScale}
+              onClose={() => setActivePanel("none")}
+            />
+          )}
+
+          {/* Share Snapshot Panel */}
+          {activePanel === "snapshot" && (
+            <ShareSnapshot
+              statistics={dataset.statistics}
+              timeScale={selectedScale}
+              openedAt={openedAt}
+              now={now}
+            />
+          )}
+
+          {/* Last Hour Narrative */}
+          <LastHourNarrative statistics={dataset.statistics} />
+
+          {featuredStatistic && (
+            <FeaturedStatCard
+              statistic={featuredStatistic}
+              openedAt={openedAt}
+              now={now}
+              timeScale={selectedScale}
+              rotationStatistics={dataset.statistics}
+              onOpen={openStatistic}
+            />
+          )}
+
+          <SinceOpenedExplorer
+            statistics={dataset.statistics}
+            openedAt={openedAt}
+            now={now}
+            mode={sinceOpenedMode}
+            onModeChange={setSinceOpenedMode}
+            onOpenStatistic={openStatistic}
+          />
+
+          <TrendingSection
+            statistics={trendingStatistics}
+            onOpenStatistic={openStatistic}
+          />
+
+          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+            <span>
+              Showing {filteredStatistics.length} of {dataset.statistics.length} signals for{" "}
+              {dataset.name}.
+            </span>
+            <span className="hidden sm:inline">
+              ⭐ Star a card to favourite it · ☰ Click for methodology &amp; sources
+            </span>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Shuffle / surprise */}
-            <button
-              type="button"
-              onClick={showRandomStatistic}
-              className="inline-flex h-8 items-center justify-center gap-2 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground transition hover:opacity-90"
-            >
-              <Shuffle className="h-3.5 w-3.5" aria-hidden="true" />
-              Surprise me
-            </button>
 
-            {/* Since I was born */}
-            <button
-              type="button"
-              onClick={() => setShowSinceBorn(true)}
-              className="inline-flex h-8 items-center justify-center gap-2 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground transition hover:bg-accent"
-            >
-              <Baby className="h-3.5 w-3.5" aria-hidden="true" />
-              Since I was born
-            </button>
-
-            {/* My World */}
-            <button
-              type="button"
-              onClick={() => togglePanel("myworld")}
-              className={`inline-flex h-8 items-center justify-center gap-2 rounded-md border px-3 text-xs font-medium transition ${
-                activePanel === "myworld"
-                  ? "border-primary/30 bg-primary/10 text-primary"
-                  : "border-border bg-background text-foreground hover:bg-accent"
-              }`}
-            >
-              <Globe className="h-3.5 w-3.5" aria-hidden="true" />
-              My World{prefs.myWorldIds.length > 0 && ` (${prefs.myWorldIds.length})`}
-            </button>
-
-            {/* Compare */}
-            <button
-              type="button"
-              onClick={() => togglePanel("compare")}
-              className={`inline-flex h-8 items-center justify-center gap-2 rounded-md border px-3 text-xs font-medium transition ${
-                activePanel === "compare"
-                  ? "border-primary/30 bg-primary/10 text-primary"
-                  : "border-border bg-background text-foreground hover:bg-accent"
-              }`}
-            >
-              <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
-              Compare
-            </button>
-
-            {/* Share snapshot */}
-            <button
-              type="button"
-              onClick={() => togglePanel("snapshot")}
-              className={`inline-flex h-8 items-center justify-center gap-2 rounded-md border px-3 text-xs font-medium transition ${
-                activePanel === "snapshot"
-                  ? "border-primary/30 bg-primary/10 text-primary"
-                  : "border-border bg-background text-foreground hover:bg-accent"
-              }`}
-            >
-              <Camera className="h-3.5 w-3.5" aria-hidden="true" />
-              Share
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* My World Panel */}
-      {activePanel === "myworld" && (
-        <MyWorldPanel
-          statistics={dataset.statistics}
-          myWorldIds={prefs.myWorldIds}
-          favorites={prefs.favorites}
-          openedAt={openedAt}
-          now={now}
-          timeScale={selectedScale}
-          onOpen={openStatistic}
-          onToggleFavorite={handleToggleFavorite}
-          onToggleMyWorld={handleToggleMyWorld}
-          onClose={() => setActivePanel("none")}
-        />
+          <StatGrid
+            dataset={dataset}
+            statistics={filteredStatistics}
+            openedAt={openedAt}
+            now={now}
+            timeScale={selectedScale}
+            highlightedStatisticId={highlightedStatisticId}
+            onOpenStatistic={openStatistic}
+            favorites={prefs.favorites}
+            onToggleFavorite={handleToggleFavorite}
+          />
+        </>
       )}
-
-      {/* Compare Panel */}
-      {activePanel === "compare" && (
-        <CompareSignals
-          statistics={dataset.statistics}
-          timeScale={selectedScale}
-          onClose={() => setActivePanel("none")}
-        />
-      )}
-
-      {/* Share Snapshot Panel */}
-      {activePanel === "snapshot" && (
-        <ShareSnapshot
-          statistics={dataset.statistics}
-          timeScale={selectedScale}
-          openedAt={openedAt}
-          now={now}
-        />
-      )}
-
-      {/* Last Hour Narrative */}
-      <LastHourNarrative statistics={dataset.statistics} />
-
-      {featuredStatistic && (
-        <FeaturedStatCard
-          statistic={featuredStatistic}
-          openedAt={openedAt}
-          now={now}
-          timeScale={selectedScale}
-          rotationStatistics={dataset.statistics}
-          onOpen={openStatistic}
-        />
-      )}
-
-      <SinceOpenedExplorer
-        statistics={dataset.statistics}
-        openedAt={openedAt}
-        now={now}
-        mode={sinceOpenedMode}
-        onModeChange={setSinceOpenedMode}
-        onOpenStatistic={openStatistic}
-      />
-
-      <TrendingSection
-        statistics={trendingStatistics}
-        onOpenStatistic={openStatistic}
-      />
-
-      <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
-        <span>
-          Showing {filteredStatistics.length} of {dataset.statistics.length} signals for{" "}
-          {dataset.name}.
-        </span>
-        <span className="hidden sm:inline">
-          ⭐ Star a card to favourite it · ☰ Click for methodology &amp; sources
-        </span>
-      </div>
-
-      <StatGrid
-        dataset={dataset}
-        statistics={filteredStatistics}
-        openedAt={openedAt}
-        now={now}
-        timeScale={selectedScale}
-        highlightedStatisticId={highlightedStatisticId}
-        onOpenStatistic={openStatistic}
-        favorites={prefs.favorites}
-        myWorldIds={prefs.myWorldIds}
-        onToggleFavorite={handleToggleFavorite}
-        onToggleMyWorld={handleToggleMyWorld}
-      />
 
       <StatDetailDrawer
         statistic={selectedStatistic}

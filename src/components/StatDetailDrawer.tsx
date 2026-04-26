@@ -490,7 +490,7 @@ function StatHeroVisual({ statistic }: { statistic: Statistic }) {
 
   return (
     <div
-      className={`relative mt-4 h-32 overflow-hidden rounded-xl border ${categoryStyle.border} bg-background/65 sm:h-36`}
+      className={`relative mt-3 h-24 overflow-hidden rounded-lg border ${categoryStyle.border} bg-background/65 sm:h-28`}
       aria-hidden="true"
     >
       <div className={`absolute inset-0 ${categoryStyle.iconBg}`} />
@@ -679,7 +679,7 @@ function VisualTraveler({
   return (
     <div
       ref={travelerRef}
-      className="stat-visual-traveler pointer-events-none absolute z-10 flex h-9 w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-current shadow-sm"
+      className="stat-visual-traveler pointer-events-none absolute z-10 flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-current shadow-sm"
     >
       {icons.map((icon, index) => (
         <span
@@ -688,7 +688,7 @@ function VisualTraveler({
             phase === index ? "scale-100 opacity-100" : "scale-90 opacity-0"
           }`}
         >
-          <StatIcon name={icon} className="h-4 w-4 text-current" />
+          <StatIcon name={icon} className="h-3.5 w-3.5 text-current" />
         </span>
       ))}
     </div>
@@ -764,7 +764,7 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
 
   return (
     <div
-      className="fixed inset-0 z-50 flex min-h-dvh items-start justify-center overflow-y-auto bg-background/75 p-2 backdrop-blur-md sm:p-4 lg:items-center"
+      className="fixed inset-0 z-50 flex min-h-dvh items-start justify-center overflow-y-auto bg-background/75 p-1.5 backdrop-blur-md sm:p-3 lg:items-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby="stat-drawer-title"
@@ -772,15 +772,15 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <section className="my-auto max-h-[calc(100vh-1rem)] w-full max-w-2xl overflow-y-auto rounded-2xl border border-border bg-card/95 p-4 text-card-foreground shadow-panel sm:max-h-[calc(100vh-2rem)] sm:p-5">
+      <section className="my-auto max-h-[calc(100dvh-0.75rem)] w-full max-w-2xl overflow-y-auto rounded-xl border border-border bg-card/95 p-3 text-card-foreground shadow-panel sm:max-h-[calc(100vh-1.5rem)] sm:p-4">
 
         {/* Header */}
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 items-start gap-3">
+        <div className="flex items-start justify-between gap-2.5">
+          <div className="flex min-w-0 items-start gap-2.5">
             <div
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${categoryStyle.iconBg} ${categoryStyle.text}`}
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${categoryStyle.iconBg} ${categoryStyle.text}`}
             >
-              <StatIcon name={statistic.icon} className="h-5 w-5" />
+              <StatIcon name={statistic.icon} className="h-4 w-4" />
             </div>
             <div className="min-w-0">
               <p className={`text-xs font-semibold uppercase tracking-widest ${categoryStyle.text}`}>
@@ -788,11 +788,11 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
               </p>
               <h2
                 id="stat-drawer-title"
-                className="mt-0.5 text-xl font-semibold leading-snug sm:text-2xl"
+                className="mt-0.5 text-xl font-semibold leading-tight sm:text-[1.35rem]"
               >
                 {statistic.title}
               </h2>
-              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <DataModeBadge dataMode={statistic.dataMode} />
                 {statistic.sensitivity === "Sensitive" && (
                   <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
@@ -805,7 +805,7 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
           <button
             type="button"
             onClick={onClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-border bg-background/70 text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-background/70 text-muted-foreground transition hover:bg-accent hover:text-accent-foreground"
             aria-label="Close details"
           >
             <X className="h-4 w-4" aria-hidden="true" />
@@ -816,7 +816,7 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
         <StatHeroVisual statistic={statistic} />
 
         {/* Description */}
-        <p className="mt-4 text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
+        <p className="mt-3 text-sm leading-5 text-muted-foreground">
           {statistic.description}
         </p>
 
@@ -828,21 +828,21 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
         )}
 
         {/* Converted averages */}
-        <div className="mt-5">
+        <div className="mt-4">
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Converted averages
           </h3>
-          <div className="overflow-hidden rounded-xl border border-border bg-background/70">
+          <div className="overflow-hidden rounded-lg border border-border bg-background/70">
             {conversions.map((conversion) => {
               const Icon = conversion.icon;
               return (
                 <div
                   key={conversion.label}
-                  className="flex items-center justify-between gap-3 border-b border-border px-3 py-2.5 last:border-b-0"
+                  className="flex items-center justify-between gap-3 border-b border-border px-2.5 py-2 last:border-b-0"
                 >
                   <div className="flex items-center gap-2.5">
                     <div
-                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${conversion.style}`}
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${conversion.style}`}
                     >
                       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                     </div>
@@ -861,10 +861,10 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
         </div>
 
         {/* Info row: source + confidence + yearly seed */}
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           {/* Source */}
           <div
-            className={`rounded-xl border ${categoryStyle.border} ${categoryStyle.iconBg} p-3`}
+            className={`rounded-lg border ${categoryStyle.border} ${categoryStyle.iconBg} p-2.5`}
           >
             <div className="mb-1 flex items-center gap-1.5">
               <Globe2 className={`h-3.5 w-3.5 ${categoryStyle.text}`} aria-hidden="true" />
@@ -895,7 +895,7 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
           </div>
 
           {/* Confidence */}
-          <div className="rounded-xl border border-border bg-background/70 p-3">
+          <div className="rounded-lg border border-border bg-background/70 p-2.5">
             <div className="mb-1 flex items-center justify-between gap-2">
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
                 Confidence
@@ -908,7 +908,7 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
           </div>
 
           {/* Yearly seed + confidence interval */}
-          <div className="rounded-xl border border-border bg-background/70 p-3">
+          <div className="rounded-lg border border-border bg-background/70 p-2.5">
             <div className="mb-1 flex items-center gap-1.5">
               <Sprout className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -933,7 +933,7 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
 
         {/* Historical change */}
         {statistic.historicalChange && (
-          <div className="mt-3 rounded-xl border border-border bg-background/70 p-3">
+          <div className="mt-2.5 rounded-lg border border-border bg-background/70 p-2.5">
             <div className="flex items-center gap-2">
               <Timer className="h-3.5 w-3.5 text-muted-foreground" />
               <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -959,7 +959,7 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
 
         {/* Surprise fact */}
         {statistic.surpriseFact && (
-          <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+          <div className="mt-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5">
             <div className="flex items-center gap-2">
               <span className="text-base">💡</span>
               <p className="text-[10px] font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">
@@ -973,11 +973,11 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
         )}
 
         {/* Methodology — collapsed by default */}
-        <div className="mt-3 overflow-hidden rounded-xl border border-border">
+        <div className="mt-2.5 overflow-hidden rounded-lg border border-border">
           <button
             type="button"
             onClick={() => setMethodologyOpen((o) => !o)}
-            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-accent/50"
+            className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left transition hover:bg-accent/50"
           >
             <div className="flex items-center gap-2">
               <LineChart className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
@@ -988,8 +988,8 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
             </span>
           </button>
           {methodologyOpen && (
-            <div className="border-t border-border px-4 py-3">
-              <p className="text-sm leading-6 text-muted-foreground">{statistic.methodology}</p>
+            <div className="border-t border-border px-3 py-2.5">
+              <p className="text-sm leading-5 text-muted-foreground">{statistic.methodology}</p>
             </div>
           )}
         </div>

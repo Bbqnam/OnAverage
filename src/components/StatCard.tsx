@@ -1,4 +1,4 @@
-import { Check, Plus, Star, TrendingDown, TrendingUp } from "lucide-react";
+import { Star, TrendingDown, TrendingUp } from "lucide-react";
 import { calculateSincePageLoad, getRateForScale, getRateRangeForScale } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { StatIcon } from "./StatIcon";
@@ -13,10 +13,8 @@ interface StatCardProps {
   isHighlighted?: boolean;
   showCategory?: boolean;
   isFavorite?: boolean;
-  isInMyWorld?: boolean;
   onOpen: (statistic: Statistic) => void;
   onToggleFavorite?: (id: string) => void;
-  onToggleMyWorld?: (id: string) => void;
 }
 
 export function StatCard({
@@ -27,10 +25,8 @@ export function StatCard({
   isHighlighted = false,
   showCategory = true,
   isFavorite = false,
-  isInMyWorld = false,
   onOpen,
   onToggleFavorite,
-  onToggleMyWorld,
 }: StatCardProps) {
   const sinceOpened = calculateSincePageLoad(statistic.yearlyEstimate, openedAt, now);
   const selectedRate = getRateForScale(statistic.yearlyEstimate, timeScale);
@@ -51,6 +47,9 @@ export function StatCard({
   const rateStr = rateRange
     ? `${formatLargeNumber(rateRange.low, rateRange.low >= 10_000)}–${formatLargeNumber(rateRange.high, rateRange.high >= 10_000)} / ${scaleLabel}`
     : `${formatLargeNumber(selectedRate, selectedRate >= 10_000)} / ${scaleLabel}`;
+  const historicalLabel = hist
+    ? `${hist.percentChange >= 0 ? "+" : ""}${hist.percentChange}% vs ${hist.label}`
+    : null;
 
   return (
     <article
@@ -59,97 +58,82 @@ export function StatCard({
         isHighlighted ? "ring-2 ring-primary/30" : ""
       }`}
     >
-      {(onToggleFavorite || onToggleMyWorld) && (
-        <div className="absolute right-2 top-2 z-10 flex items-center gap-1">
-          {onToggleMyWorld && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleMyWorld(statistic.id);
-              }}
-              aria-label={isInMyWorld ? "Remove from My World" : "Add to My World"}
-              title={isInMyWorld ? "Remove from My World" : "Add to My World"}
-              className={`rounded-full border p-0.5 transition ${
-                isInMyWorld
-                  ? "border-primary/30 bg-primary/10 text-primary opacity-100"
-                  : "border-transparent bg-background/80 text-muted-foreground opacity-0 shadow-sm hover:text-foreground group-hover:opacity-100"
-              }`}
-            >
-              {isInMyWorld ? <Check className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-            </button>
-          )}
-          {onToggleFavorite && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite(statistic.id);
-              }}
-              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
-              title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-              className={`rounded-full border p-0.5 transition ${
-                isFavorite
-                  ? "border-amber-400/30 bg-amber-400/10 text-amber-500 opacity-100"
-                  : "border-transparent bg-background/80 text-muted-foreground opacity-0 shadow-sm hover:text-foreground group-hover:opacity-100"
-              }`}
-            >
-              <Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} />
-            </button>
-          )}
+      {onToggleFavorite && (
+        <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(statistic.id);
+            }}
+            aria-label={isFavorite ? "Remove from My World" : "Add to My World"}
+            title={isFavorite ? "Remove from My World" : "Add to My World"}
+            className={`rounded-full border p-0.5 transition ${
+              isFavorite
+                ? "border-amber-400/30 bg-amber-400/10 text-amber-500 opacity-100"
+                : "border-transparent bg-background/80 text-muted-foreground opacity-0 shadow-sm hover:text-foreground group-hover:opacity-100"
+            }`}
+          >
+            <Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} />
+          </button>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex items-start gap-3 px-3 pt-3">
-        <div className={`relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}>
+      <div className="flex min-w-0 gap-2.5 p-2.5">
+        <div className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}>
           {(statistic.category === "Life" || statistic.category === "Events" || statistic.category === "Environment") && (
-            <span className={`absolute h-9 w-9 rounded-full ${categoryStyle.dot} opacity-20 ${categoryStyle.pulse}`} />
+            <span className={`absolute h-8 w-8 rounded-full ${categoryStyle.dot} opacity-20 ${categoryStyle.pulse}`} />
           )}
-          <StatIcon name={statistic.icon} className="relative z-10 h-4 w-4" />
+          <StatIcon name={statistic.icon} className="relative z-10 h-3.5 w-3.5" />
         </div>
-        <div className="min-w-0 flex-1 pr-5">
-          {showCategory && (
-            <p className={`text-[10px] font-semibold uppercase tracking-widest ${categoryStyle.text}`}>
-              {statistic.category}
-            </p>
-          )}
-          <h2 className="mt-0.5 text-sm font-semibold leading-snug text-foreground">
-            {statistic.title}
-          </h2>
-          <p className="mt-0.5 truncate text-xs text-muted-foreground">
-            {statistic.shortDescription}
-          </p>
+        <div className="min-w-0 flex-1 pr-8">
+          <div className="flex min-w-0 items-start justify-between gap-2">
+            <div className="min-w-0">
+              {showCategory && (
+                <p className={`text-[10px] font-semibold uppercase tracking-widest ${categoryStyle.text}`}>
+                  {statistic.category}
+                </p>
+              )}
+              <h2 className="mt-0.5 truncate text-sm font-bold leading-snug text-foreground transition-colors group-hover:text-primary">
+                {statistic.title}
+              </h2>
+              <p className="truncate text-[11px] text-muted-foreground">
+                {statistic.shortDescription}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-2 flex items-end justify-between gap-2">
+            <div className="min-w-0">
+              <p className="text-[9px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Since opened
+              </p>
+              <p className="mt-0.5 text-lg font-semibold leading-none tracking-tight text-foreground">
+                {formatLargeNumber(sinceOpened, sinceOpened >= 100_000)}
+              </p>
+            </div>
+            <div className="min-w-0 text-right">
+              <p className={`truncate text-[11px] leading-tight ${categoryStyle.rateText} opacity-80`}>
+                ≈ {rateStr}
+              </p>
+              {hist && historicalLabel && (
+                <span
+                  title={`Compared with ${hist.label}`}
+                  className={`mt-1 inline-flex max-w-full items-center gap-0.5 rounded-full bg-background/70 px-1.5 py-0.5 text-[10px] font-medium leading-none ${
+                    hist.percentChange >= 0
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-rose-500 dark:text-rose-400"
+                  }`}
+                >
+                  {hist.percentChange >= 0
+                    ? <TrendingUp className="h-2.5 w-2.5 shrink-0" />
+                    : <TrendingDown className="h-2.5 w-2.5 shrink-0" />}
+                  <span className="truncate">{historicalLabel}</span>
+                </span>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Counter */}
-      <div className="px-3 pt-3">
-        <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-          Since you opened
-        </p>
-        <p className="mt-1 text-2xl font-semibold tracking-tight text-foreground">
-          {formatLargeNumber(sinceOpened, sinceOpened >= 100_000)}
-        </p>
-      </div>
-
-      {/* Single subtle footer line: rate + optional historical % */}
-      <div className="flex items-center justify-between gap-2 px-3 pb-3 pt-1.5">
-        <p className={`text-[11px] ${categoryStyle.rateText} opacity-75`}>
-          ≈ {rateStr}
-        </p>
-        {hist && (
-          <span className={`inline-flex shrink-0 items-center gap-0.5 text-[10px] font-medium ${
-            hist.percentChange >= 0
-              ? "text-emerald-600 dark:text-emerald-400"
-              : "text-rose-500 dark:text-rose-400"
-          }`}>
-            {hist.percentChange >= 0
-              ? <TrendingUp className="h-2.5 w-2.5" />
-              : <TrendingDown className="h-2.5 w-2.5" />}
-            {hist.percentChange >= 0 ? "+" : ""}{hist.percentChange}%
-          </span>
-        )}
       </div>
     </article>
   );

@@ -1,4 +1,4 @@
-export function getBalancedGridClass(itemCount: number, gapClass = "gap-3"): string {
+export function getBalancedGridClass(itemCount: number, gapClass = "gap-2.5"): string {
   const baseClass = `grid ${gapClass}`;
 
   if (itemCount <= 1) {
@@ -21,5 +21,5 @@ export function getBalancedGridClass(itemCount: number, gapClass = "gap-3"): str
     return `${baseClass} sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5`;
   }
 
-  return `${baseClass} sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6`;
+  return `${baseClass} sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-6`;
 }

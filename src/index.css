@@ -156,6 +156,14 @@ body {
   z-index: 3;
 }
 
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .ambient-glow {
   aspect-ratio: 1;
   border-radius: 9999px;
