@@ -4,11 +4,15 @@ import {
   Briefcase,
   CircleDot,
   DollarSign,
+  GraduationCap,
   Heart,
+  HeartPulse,
   PlaneTakeoff,
   Smile,
   Sprout,
+  UtensilsCrossed,
   Users,
+  Wifi,
   type LucideIcon,
 } from "lucide-react";
 import { dashboardTabs } from "../data/categories";
@@ -31,6 +35,10 @@ const tabIcons: Record<DashboardTab, LucideIcon> = {
   Society: Users,
   Fun: Smile,
   Events: Activity,
+  Health: HeartPulse,
+  Education: GraduationCap,
+  Internet: Wifi,
+  Food: UtensilsCrossed,
 };
 
 export function CategoryTabs({ selectedTab, statistics, onTabChange }: CategoryTabsProps) {
