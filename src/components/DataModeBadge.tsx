@@ -11,10 +11,18 @@ const styles: Record<DataMode, string> = {
   estimated: "border-border bg-muted text-muted-foreground",
 };
 
+const tooltips: Record<DataMode, string> = {
+  live: "Connected to a live data feed — updates in real time.",
+  "semi-live": "Derived from a verified annual figure divided by seconds — ticks live but the base number is periodically updated.",
+  estimated: "Derived from annual statistics or surveys; the counter animates but the underlying data is a modelled estimate.",
+};
+
 export function DataModeBadge({ dataMode }: DataModeBadgeProps) {
   return (
     <span
-      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${styles[dataMode]}`}
+      className={`inline-flex cursor-help items-center rounded-md border px-2 py-0.5 text-xs font-medium ${styles[dataMode]}`}
+      title={tooltips[dataMode]}
+      aria-label={`${formatLabel(dataMode)}: ${tooltips[dataMode]}`}
     >
       {formatLabel(dataMode)}
     </span>
