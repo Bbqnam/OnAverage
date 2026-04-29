@@ -7,15 +7,15 @@ interface ConfidenceBadgeProps {
 }
 
 const styles: Record<Confidence, string> = {
-  high: "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  medium: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  high: "border-emerald-500/15 bg-emerald-500/5 text-emerald-700/80 dark:text-emerald-300/80",
+  medium: "border-amber-500/15 bg-amber-500/5 text-amber-700/80 dark:text-amber-300/80",
   low: "border-muted bg-muted text-muted-foreground",
 };
 
 const tooltips: Record<Confidence, string> = {
   high: "Source is a major international dataset (UN, WHO, World Bank). Margin of error < 5%.",
   medium: "Based on a credible study or industry report. Some regional variation may apply.",
-  low: "Rough model estimate — directionally useful but treat as an order-of-magnitude guide.",
+  low: "Rough model estimate, useful as a broad guide.",
 };
 
 export function ConfidenceBadge({ confidence, title }: ConfidenceBadgeProps) {
@@ -23,11 +23,11 @@ export function ConfidenceBadge({ confidence, title }: ConfidenceBadgeProps) {
 
   return (
     <span
-      className={`inline-flex cursor-help items-center rounded-md border px-2 py-0.5 text-xs font-medium ${styles[confidence]}`}
+      className={`inline-flex cursor-help items-center rounded-full border px-1.5 py-px text-[10px] font-medium leading-4 ${styles[confidence]}`}
       title={tooltip}
       aria-label={`Confidence ${formatLabel(confidence)}: ${tooltip}`}
     >
-      {formatLabel(confidence)} confidence
+      {formatLabel(confidence)}
     </span>
   );
 }

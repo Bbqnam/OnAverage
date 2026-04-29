@@ -71,7 +71,7 @@ export function getSinceOpenedHighlights(
 ): Statistic[] {
   if (mode === "live") {
     return statistics
-      .filter((statistic) => statistic.dataMode === "live")
+      .filter((statistic) => statistic.dataMode !== "estimated")
       .sort((a, b) => b.yearlyEstimate - a.yearlyEstimate)
       .slice(0, limit);
   }

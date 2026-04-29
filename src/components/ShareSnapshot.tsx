@@ -37,7 +37,7 @@ export function ShareSnapshot({ statistics, timeScale, openedAt, now }: ShareSna
 
   function buildSnapshotText(): string {
     const lines = [
-      `📊 OnAverage Snapshot — ${timestamp}`,
+      `📊 OnAverage Snapshot, ${timestamp}`,
       `Scale: per ${timeScale === "year" ? "year" : timeScale}`,
       "",
       ...featured.map((s) => {
@@ -72,7 +72,7 @@ export function ShareSnapshot({ statistics, timeScale, openedAt, now }: ShareSna
       <div className="p-4">
         {/* Preview */}
         <div className="rounded-lg bg-muted/40 p-3 font-mono text-xs leading-relaxed text-muted-foreground">
-          <p className="font-semibold text-foreground">📊 OnAverage Snapshot — {timestamp}</p>
+          <p className="font-semibold text-foreground">📊 OnAverage Snapshot, {timestamp}</p>
           <p className="mt-0.5 text-[11px]">Scale: per {timeScale === "year" ? "year" : timeScale}</p>
           <div className="mt-2 space-y-1">
             {featured.map((s) => {
@@ -108,7 +108,7 @@ export function ShareSnapshot({ statistics, timeScale, openedAt, now }: ShareSna
           )}
         </button>
         <p className="mt-2 text-center text-[11px] text-muted-foreground">
-          Paste and share anywhere — Twitter, Slack, notes.
+          Paste and share anywhere: Twitter, Slack, notes.
         </p>
       </div>
     </div>

@@ -46,9 +46,9 @@ export function MetricSummaryCards({
       icon: Layers3,
     },
     {
-      label: "Live-ish",
+      label: "Live style",
       value: liveCount.toString(),
-      detail: "live / semi-live",
+      detail: "live / semi live",
       icon: Radio,
     },
     {
@@ -60,7 +60,7 @@ export function MetricSummaryCards({
     {
       label: "Mode",
       value: dataset.name,
-      detail: dataset.status === "available" ? "Live-feeling averages" : "Coming soon",
+      detail: dataset.status === "available" ? "Moving averages" : "Coming soon",
       icon: Globe2,
     },
     {

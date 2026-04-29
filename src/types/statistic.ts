@@ -43,12 +43,13 @@ export interface ConfidenceInterval {
 export interface HistoricalChange {
   yearsAgo: number;
   percentChange: number; // positive = grew, negative = shrank
-  label: string; // e.g. "10 years ago"
+  label: string; // e.g. "2017" or "10 years ago"
 }
 
 export interface HistoricalDataPoint {
   year: number;
   value: number; // yearly total in the statistic's base unit
+  isEstimated?: boolean;
 }
 
 export interface StatisticSource {

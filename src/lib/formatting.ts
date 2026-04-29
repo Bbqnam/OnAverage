@@ -55,3 +55,12 @@ export function formatLabel(value: string): string {
     .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
     .join(" ");
 }
+
+export function cleanDisplayText(value: string): string {
+  return value
+    .replace(/(\d)\s*[–—-]\s*(\d)/g, "$1 to $2")
+    .replace(/\s+[–—]\s+/g, ", ")
+    .replace(/([A-Za-z])-(?=[A-Za-z])/g, "$1 ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+}

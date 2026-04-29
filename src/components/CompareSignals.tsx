@@ -217,7 +217,7 @@ export function CompareSignals({ statistics, timeScale, onClose }: CompareSignal
                   <span className="font-semibold">{ratio.biggerStat?.title}</span>.
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Screenshot this — it's the kind of thing worth sharing.
+                  Screenshot this. It is the kind of thing worth sharing.
                 </p>
               </div>
             )}

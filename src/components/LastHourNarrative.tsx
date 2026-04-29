@@ -117,7 +117,7 @@ export function LastHourNarrative({ statistics }: LastHourNarrativeProps) {
             What happened in the last hour?
           </h2>
           <p className="text-xs leading-tight text-muted-foreground">
-            Average estimates — not live feeds
+            Average estimates, not live feeds
           </p>
         </div>
       </div>

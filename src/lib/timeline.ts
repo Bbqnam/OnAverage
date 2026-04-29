@@ -159,6 +159,11 @@ function calculateExponentialFallback(
   const secondsPerYear = 365.2425 * 24 * 60 * 60;
   const statStart = new Date(stat.startYear, 0, 1);
   const signalAgeYears = Math.max(0, elapsed.elapsedSeconds / secondsPerYear);
+
+  if (elapsed.elapsedSeconds < secondsPerYear / 12) {
+    return stat.ratePerSecond * elapsed.elapsedSeconds;
+  }
+
   const fullAgeYears = Math.max(1, (now.getTime() - statStart.getTime()) / 1000 / secondsPerYear);
   const rampShare = Math.min(1, signalAgeYears / fullAgeYears);
   const averageAnnualValue = stat.yearlyEstimate * Math.pow(rampShare, 1.8) * 0.45;

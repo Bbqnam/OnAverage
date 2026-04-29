@@ -6,7 +6,7 @@ import { getRateForScale } from "../lib/calculations";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { getDisplayedConfidence } from "../lib/confidence";
 import { getCumulativeValue, getTimelineLabel } from "../lib/timeline";
-import { formatLargeNumber, formatRate } from "../lib/formatting";
+import { cleanDisplayText, formatLargeNumber, formatRate } from "../lib/formatting";
 import type { Statistic, TimeScale } from "../types/statistic";
 
 interface FeaturedStatCardProps {
@@ -123,7 +123,7 @@ export function FeaturedStatCard({
         <button
           type="button"
           onClick={() => onOpen(activeStatistic)}
-          className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] gap-3 px-3 py-3 text-left transition hover:bg-accent/30 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+          className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 px-3 py-3 text-left transition hover:bg-accent/30 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
         >
           <div
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
@@ -135,20 +135,20 @@ export function FeaturedStatCard({
             <p
               className={`text-[10px] font-semibold uppercase tracking-widest ${categoryStyle.text}`}
             >
-              Random live fact
+              Random average
             </p>
             <h2 className="truncate text-base font-semibold leading-snug sm:text-lg">
-              {activeStatistic.title}
+              {cleanDisplayText(activeStatistic.title)}
             </h2>
             <p className="truncate text-xs text-muted-foreground">
-              {activeStatistic.shortDescription}
+              {cleanDisplayText(activeStatistic.shortDescription)}
             </p>
           </div>
 
           <div className="col-span-2 min-w-0 text-left sm:col-span-1 sm:text-right">
             <p className="text-2xl font-semibold tabular-nums leading-none text-foreground/90">
               {cumulative.isUnavailable
-                ? "—"
+                ? "Not available"
                 : formatLargeNumber(cumulative.value, cumulative.value >= 100_000)}
             </p>
             {cumulative.isUnavailable ? (
@@ -230,11 +230,11 @@ function SupportingStatButton({
 
       <div className="min-w-0 flex-1">
         <p className="truncate text-xs text-muted-foreground">
-          {statistic.shortTitle}
+          {cleanDisplayText(statistic.shortTitle)}
         </p>
         <p className="truncate text-sm font-semibold tabular-nums text-foreground">
           {cumulative.isUnavailable
-            ? "—"
+            ? "Not available"
             : formatLargeNumber(cumulative.value, cumulative.value >= 100_000)}
         </p>
         {cumulative.isUnavailable ? (

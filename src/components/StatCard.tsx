@@ -4,7 +4,7 @@ import { getCategoryStyle } from "../lib/categoryStyles";
 import { getHistoricalChange } from "../lib/historical";
 import { getCumulativeValue, getTimelineLabel } from "../lib/timeline";
 import { StatIcon } from "./StatIcon";
-import { formatLargeNumber } from "../lib/formatting";
+import { cleanDisplayText, formatLargeNumber } from "../lib/formatting";
 import type { Statistic, TimeScale } from "../types/statistic";
 
 interface StatCardProps {
@@ -50,10 +50,10 @@ export function StatCard({
     : timeScale;
 
   const rateStr = rateRange
-    ? `${formatLargeNumber(rateRange.low, rateRange.low >= 10_000)}–${formatLargeNumber(rateRange.high, rateRange.high >= 10_000)} / ${scaleLabel}`
+    ? `${formatLargeNumber(rateRange.low, rateRange.low >= 10_000)} to ${formatLargeNumber(rateRange.high, rateRange.high >= 10_000)} / ${scaleLabel}`
     : `${formatLargeNumber(selectedRate, selectedRate >= 10_000)} / ${scaleLabel}`;
   const historicalLabel = hist
-    ? `${hist.percentChange >= 0 ? "+" : ""}${hist.percentChange}% vs ${hist.label}`
+    ? `${hist.percentChange >= 0 ? "+" : ""}${hist.percentChange}% compared with ${hist.label}`
     : null;
 
   return (
@@ -100,10 +100,10 @@ export function StatCard({
                 </p>
               )}
               <h2 className="mt-0.5 truncate text-sm font-bold leading-tight text-foreground transition-colors group-hover:text-primary">
-                {statistic.title}
+                {cleanDisplayText(statistic.title)}
               </h2>
               <p className="truncate text-[11px] text-muted-foreground">
-                {statistic.shortDescription}
+                {cleanDisplayText(statistic.shortDescription)}
               </p>
             </div>
           </div>
@@ -112,7 +112,7 @@ export function StatCard({
             <div className="min-w-0">
               <p className="text-2xl font-bold leading-none tracking-tight text-foreground">
                 {cumulative.isUnavailable
-                  ? "—"
+                  ? "Not available"
                   : formatLargeNumber(cumulative.value, cumulative.value >= 100_000)}
               </p>
               {cumulative.isUnavailable ? (

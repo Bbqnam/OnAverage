@@ -148,7 +148,7 @@ export function SinceOpenedExplorer({
                 }`}
                 aria-pressed={isSelected}
               >
-                {option === "mixed" ? "Mixed" : "Live only"}
+                  {option === "mixed" ? "Mixed" : "Source-backed"}
               </button>
             );
           })}

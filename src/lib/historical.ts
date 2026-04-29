@@ -1,55 +1,59 @@
 import type { HistoricalChange, HistoricalDataPoint, Statistic } from "../types/statistic";
-import { getFilteredHistoricalData } from "./timeline";
+
+const HISTORICAL_WINDOW_YEARS = 10;
 
 export function getHistoricalSeries(statistic: Statistic): HistoricalDataPoint[] {
-  const currentYear = new Date().getFullYear();
-  const series = getFilteredHistoricalData(statistic, currentYear - 9);
+  const historicalData = normalizeHistoricalData(statistic);
 
-  if (series.length < 2) {
+  if (historicalData.length === 0) {
     return [];
   }
 
-  const sorted = [...series]
-    .filter((point) => Number.isFinite(point.year) && Number.isFinite(point.value))
-    .sort((a, b) => a.year - b.year);
+  const latestYear = historicalData[historicalData.length - 1].year;
+  const startYear = latestYear - HISTORICAL_WINDOW_YEARS + 1;
 
-  if (sorted.length < 2) {
-    return [];
+  return historicalData.filter((point) => point.year >= startYear && point.year <= latestYear);
+}
+
+function normalizeHistoricalData(statistic: Statistic): HistoricalDataPoint[] {
+  const byYear = new Map<number, HistoricalDataPoint>();
+
+  for (const point of statistic.historicalData ?? []) {
+    if (!Number.isFinite(point.year) || !Number.isFinite(point.value)) continue;
+
+    byYear.set(point.year, {
+      ...point,
+      value: Math.max(0, point.value),
+      isEstimated: point.isEstimated ?? statistic.sourceTier === "estimated",
+    });
   }
 
-  const last = sorted[sorted.length - 1];
-
-  if (last.year >= currentYear) {
-    return sorted;
-  }
-
-  return [
-    ...sorted,
-    ...Array.from({ length: currentYear - last.year }, (_, index) => ({
-      year: last.year + index + 1,
-      value: last.value,
-    })),
-  ];
+  return [...byYear.values()].sort((a, b) => a.year - b.year);
 }
 
 export function getHistoricalChange(statistic: Statistic): HistoricalChange | null {
-  const series = getHistoricalSeries(statistic);
+  const series = getHistoricalSeries(statistic).filter((point) => !point.isEstimated);
 
   if (series.length >= 2) {
     const first = series[0];
     const last = series[series.length - 1];
+    const yearsAgo = last.year - first.year;
 
-    if (first.value > 0 && Number.isFinite(first.value) && Number.isFinite(last.value)) {
-      const yearsAgo = series.length >= 10 ? 10 : last.year - first.year;
+    if (
+      yearsAgo > 0 &&
+      first.value > 0 &&
+      Number.isFinite(first.value) &&
+      Number.isFinite(last.value)
+    ) {
       const percentChange = Math.round(((last.value - first.value) / first.value) * 100);
 
       return {
         yearsAgo,
         percentChange,
-        label: `${yearsAgo} years ago`,
+        label: `${first.year}`,
       };
     }
   }
 
-  return statistic.historicalChange ?? null;
+  return null;
 }

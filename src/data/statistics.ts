@@ -92,7 +92,7 @@ const timelineMetadataById: Record<string, TimelineMetadata> = {
   "ai-prompts-asked": { startYear: 2022, estimateType: "digital", growthCurve: "exponential" },
   "card-payments-made": { startYear: 1950, estimateType: "modern", growthCurve: "linear" },
   "online-purchases": { startYear: 1995, estimateType: "digital", growthCurve: "exponential" },
-  "stock-trades": { startYear: 1792, estimateType: "modern", growthCurve: "linear" },
+  "stock-trades": { startYear: 1792, estimateType: "modern", growthCurve: "disrupted" },
   "new-millionaires": { startYear: 1900, estimateType: "tracked", growthCurve: "linear" },
   "personal-bankruptcies": { startYear: 1800, estimateType: "modern", growthCurve: "flat" },
   "money-spent-online": { startYear: 1995, estimateType: "digital", growthCurve: "exponential" },
@@ -160,6 +160,32 @@ function ensureEstimatedMethodology(seed: StatisticSeed, sourceTier: SourceTier)
   return `${seed.methodology} No complete official global time series is attached for this signal, so this value should be treated as a directional estimate until reviewed source data replaces it.`;
 }
 
+function inferSourceTier(seed: StatisticSeed): SourceTier {
+  const sourceText = `${seed.sourceName} ${seed.source?.name ?? ""}`;
+
+  if (/(placeholder|OnAverage|playful|mock-live|proxy)/i.test(sourceText)) {
+    return "estimated";
+  }
+
+  if (
+    /(UN DESA|UNEP|UNESCO|WHO|IARC|World Bank|FAO|NASA|NOAA|USGS|BIS|ICAO|Wikimedia|Global Carbon Project)/i.test(
+      sourceText,
+    )
+  ) {
+    return "official";
+  }
+
+  if (
+    /(OICA|Statista|data\.ai|eMarketer|International Coffee Organization|International Publishers Association|Stanford University|The Lancet|UCS)/i.test(
+      sourceText,
+    )
+  ) {
+    return "industry";
+  }
+
+  return "estimated";
+}
+
 function enrichStatistic(seed: StatisticSeed): Statistic {
   const fallbackTimeline: TimelineMetadata = {
     startYear: 1800,
@@ -167,7 +193,7 @@ function enrichStatistic(seed: StatisticSeed): Statistic {
     growthCurve: "linear",
   };
   const timeline = timelineMetadataById[seed.id] ?? fallbackTimeline;
-  const sourceTier = seed.sourceTier ?? sourceTierOverrides[seed.id] ?? "estimated";
+  const sourceTier = seed.sourceTier ?? sourceTierOverrides[seed.id] ?? inferSourceTier(seed);
   const confidenceRange = seed.confidenceRange ??
     (seed.confidenceInterval
       ? { min: seed.confidenceInterval.low, max: seed.confidenceInterval.high }
@@ -241,7 +267,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     contextNote:
       "Birth counts vary by year and country reporting method; this MVP uses a rounded global annual estimate.",
     confidenceInterval: { low: 128_000_000, high: 137_000_000 },
-    historicalChange: { yearsAgo: 10, percentChange: -8, label: "10 years ago" },
     surpriseFact:
       "Most people guess the global birth rate is rising — it has actually been declining since the 1960s. More than half of all births today happen in Africa and South Asia.",
   },
@@ -287,7 +312,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
       { year: 2024, value: 62_389_498 },
     ],
     confidenceInterval: { low: 61_000_000, high: 66_000_000 },
-    historicalChange: { yearsAgo: 10, percentChange: +12, label: "10 years ago" },
     tags: ["death", "mortality", "population", "demographics", "un"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "people died",
@@ -338,7 +362,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     tags: ["population", "growth", "demographics", "net change"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "people were added to the global population",
-    historicalChange: { yearsAgo: 10, percentChange: -14, label: "10 years ago" },
   },
   {
     id: "people-waking-up",
@@ -524,7 +547,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     tags: ["flight", "air travel", "aviation", "takeoff", "icao"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "flights took off",
-    historicalChange: { yearsAgo: 10, percentChange: +38, label: "10 years ago" },
   },
   {
     id: "flights-landing",
@@ -625,19 +647,25 @@ const globalStatisticSeeds: StatisticSeed[] = [
     shortDescription: "Global vehicle production",
     category: "Travel",
     icon: "car",
-    yearlyEstimate: 93_500_000,
+    yearlyEstimate: 92_504_338,
     unit: "vehicles",
-    sourceName: "OICA global vehicle production placeholder",
-    sourceUrl: "https://www.oica.net/production-statistics/",
-    confidence: "medium",
+    sourceName: "OICA 2024 Production Statistics",
+    sourceUrl: "https://www.oica.net/2024-production-statistics/",
+    sourceYear: 2024,
+    source: {
+      name: "OICA 2024 Production Statistics",
+      url: "https://www.oica.net/2024-production-statistics/",
+    },
+    sourceTier: "industry",
+    dataLastUpdated: 2024,
+    confidence: "high",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Uses a rounded annual global vehicle production estimate as the yearly baseline.",
-    tags: ["cars", "vehicles", "production", "manufacturing", "travel"],
+      "Uses OICA's 2024 world motor-vehicle production table. Passenger car and commercial-vehicle totals are summed in the source table, and the dashboard converts that annual total into average rates.",
+    tags: ["cars", "vehicles", "production", "manufacturing", "travel", "oica"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "vehicles were produced",
-    historicalChange: { yearsAgo: 10, percentChange: +22, label: "10 years ago" },
   },
   {
     id: "road-accidents",
@@ -920,7 +948,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     tags: ["search", "internet", "google", "questions", "technology", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "searches happened",
-    historicalChange: { yearsAgo: 10, percentChange: +62, label: "10 years ago" },
     contextNote:
       "Search companies do not publish exact live global query counts, so this app treats the number as directional.",
   },
@@ -990,7 +1017,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     tags: ["messages", "chat", "texting", "communication", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "messages were sent",
-    historicalChange: { yearsAgo: 10, percentChange: +210, label: "10 years ago" },
   },
   {
     id: "videos-watched",
@@ -1013,7 +1039,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     tags: ["video", "streaming", "youtube", "tiktok", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "videos were watched",
-    historicalChange: { yearsAgo: 10, percentChange: +340, label: "10 years ago" },
   },
   {
     id: "apps-downloaded",
@@ -1148,7 +1173,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     tags: ["payments", "cards", "finance", "money"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "card payments were made",
-    historicalChange: { yearsAgo: 10, percentChange: +95, label: "10 years ago" },
   },
   {
     id: "online-purchases",
@@ -1171,7 +1195,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     tags: ["shopping", "ecommerce", "orders", "money", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "online purchases were placed",
-    historicalChange: { yearsAgo: 10, percentChange: +180, label: "10 years ago" },
   },
   {
     id: "personal-bankruptcies",
@@ -1244,21 +1267,36 @@ const globalStatisticSeeds: StatisticSeed[] = [
     title: "Stock trades",
     shortTitle: "Stock trades",
     description:
-      "A directional estimate of exchange-traded equity transactions worldwide.",
-    shortDescription: "Market transactions",
+      "Equity-share trades reported by member exchanges in the World Federation of Exchanges annual statistics.",
+    shortDescription: "Reported exchange trades",
     category: "Money",
     icon: "candlestick-chart",
-    yearlyEstimate: 50_000_000_000,
+    yearlyEstimate: 62_048_677_420,
     unit: "trades",
-    sourceName: "World Federation of Exchanges placeholder",
-    sourceUrl: "https://www.world-exchanges.org/",
-    confidence: "low",
-    dataMode: "live",
+    sourceName: "World Federation of Exchanges 2024 Annual Statistics Guide",
+    sourceUrl: "https://www.world-exchanges.org/our-work/articles/2024-annual-statistics-guide",
+    sourceYear: 2024,
+    source: {
+      name: "World Federation of Exchanges 2024 Annual Statistics Guide",
+      url: "https://www.world-exchanges.org/our-work/articles/2024-annual-statistics-guide",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2024,
+    confidence: "high",
+    dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Uses a rounded trade-count placeholder because exchanges publish different transaction and volume measures.",
-    tags: ["stocks", "trading", "markets", "money", "fuzzy"],
-    isFuzzyEstimate: true,
+      "Uses WFE Annual Statistics Guide equity tables 1.7.1, 1.7.2, and 1.7.3. The annual figures are reported in thousands, so electronic order book, negotiated-deal, and reported-trade counts are summed and multiplied by 1,000. This is an official WFE member-exchange total, not a live feed of every global market venue.",
+    // SOURCE: World Federation of Exchanges 2024 Annual Statistics Guide
+    // URL: https://www.world-exchanges.org/our-work/articles/2024-annual-statistics-guide
+    // ACCESSED: 2026-04-29
+    // NOTES: Sum of Equity 1.7.1, 1.7.2, and 1.7.3 number-of-trades columns. WFE reports values in thousands.
+    historicalData: [
+      { year: 2023, value: 51_311_272_420 },
+      { year: 2024, value: 62_048_677_420 },
+    ],
+    tags: ["stocks", "trading", "markets", "money", "wfe"],
+    isFuzzyEstimate: false,
     sinceOpenedLabel: "stock trades happened",
   },
   {
@@ -1266,24 +1304,24 @@ const globalStatisticSeeds: StatisticSeed[] = [
     title: "Crypto trades",
     shortTitle: "Crypto trades",
     description:
-      "A mock-live directional estimate for cryptocurrency trades across major centralized and decentralized venues.",
-    shortDescription: "Mock-live crypto activity",
+      "A directional estimate for cryptocurrency trades across major centralized and decentralized venues.",
+    shortDescription: "Crypto trading estimate",
     category: "Money",
     icon: "candlestick-chart",
     yearlyEstimate: 18_000_000_000,
     unit: "trades",
-    sourceName: "OnAverage mock-live market placeholder",
+    sourceName: "OnAverage crypto-market estimate",
     sourceUrl: "https://coinmarketcap.com/",
     confidence: "low",
-    dataMode: "live",
+    dataMode: "estimated",
     sensitivity: "Normal",
     methodology:
-      "Uses a rounded placeholder for global crypto trade counts. It is marked live because a future version can swap in market APIs, but Phase 1 does not connect to one.",
-    tags: ["crypto", "bitcoin", "trading", "markets", "money", "mock live", "fuzzy"],
+      "Uses a rounded estimate for global crypto trade counts because exchanges and decentralized venues publish inconsistent activity metrics. No market API is connected, so this is not a live feed.",
+    tags: ["crypto", "bitcoin", "trading", "markets", "money", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "crypto trades happened",
     contextNote:
-      "This is mock-live for now. No exchange or blockchain API is connected yet.",
+      "No exchange or blockchain API is connected yet, so this remains a low-confidence estimate.",
   },
   {
     id: "crimes-reported",
@@ -1486,7 +1524,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     tags: ["co2", "carbon", "climate", "environment"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "metric tons of CO₂ were emitted",
-    historicalChange: { yearsAgo: 10, percentChange: +9, label: "10 years ago" },
     contextNote:
       "Emissions estimates vary by scope and publication year. This seed value is rounded for the MVP.",
   },
@@ -1517,7 +1554,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     tags: ["trees", "forest", "environment", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "trees were cut down",
-    historicalChange: { yearsAgo: 10, percentChange: -5, label: "10 years ago" },
   },
   {
     id: "trees-planted",
@@ -1578,16 +1614,23 @@ const globalStatisticSeeds: StatisticSeed[] = [
     shortDescription: "Municipal waste estimate",
     category: "Environment",
     icon: "trash",
-    yearlyEstimate: 2_240_000_000,
+    yearlyEstimate: 2_560_000_000,
     unit: "metric tons",
-    sourceName: "World Bank What a Waste placeholder",
-    sourceUrl: "https://datatopics.worldbank.org/what-a-waste/",
-    confidence: "medium",
+    sourceName: "World Bank What a Waste 3.0",
+    sourceUrl: "https://www.worldbank.org/what-a-waste",
+    sourceYear: 2022,
+    source: {
+      name: "World Bank What a Waste 3.0",
+      url: "https://www.worldbank.org/what-a-waste",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2022,
+    confidence: "high",
     dataMode: "semi-live",
     sensitivity: "Normal",
     methodology:
-      "Uses a rounded global municipal solid-waste estimate from public World Bank reporting.",
-    tags: ["waste", "trash", "environment"],
+      "Uses the World Bank What a Waste 3.0 global municipal solid waste generation figure for 2022. The report gives 2.56 billion tonnes, which is converted into average dashboard rates.",
+    tags: ["waste", "trash", "environment", "world bank"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "metric tons of waste were produced",
   },
@@ -1612,7 +1655,6 @@ const globalStatisticSeeds: StatisticSeed[] = [
     tags: ["renewable", "energy", "electricity", "environment"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "kWh of renewable energy were generated",
-    historicalChange: { yearsAgo: 10, percentChange: +165, label: "10 years ago" },
   },
   {
     id: "freshwater-withdrawn",
@@ -1899,20 +1941,25 @@ const globalStatisticSeeds: StatisticSeed[] = [
     title: "Earthquakes detected",
     shortTitle: "Earthquakes",
     description:
-      "A mock-live estimate of detectable earthquakes worldwide, including many small events people usually do not feel.",
-    shortDescription: "Mock-live seismic events",
+      "An average estimate of detectable earthquakes worldwide, including many small events people usually do not feel.",
+    shortDescription: "Seismic event estimate",
     category: "Events",
     icon: "activity",
     yearlyEstimate: 500_000,
     unit: "earthquakes",
-    sourceName: "USGS earthquake catalog placeholder",
+    sourceName: "USGS Earthquake Hazards Program",
     sourceUrl: "https://earthquake.usgs.gov/earthquakes/map/",
+    source: {
+      name: "USGS Earthquake Hazards Program",
+      url: "https://earthquake.usgs.gov/earthquakes/map/",
+    },
+    sourceTier: "official",
     confidence: "medium",
-    dataMode: "live",
+    dataMode: "semi-live",
     sensitivity: "Sensitive",
     methodology:
-      "Uses a rounded annual count for detectable seismic events. It is marked live because the future version can connect to an earthquake feed.",
-    tags: ["earthquake", "seismic", "events", "usgs", "mock live"],
+      "Uses a rounded annual count for globally detectable seismic events and converts it to average dashboard rates. The app does not yet query the USGS live feed.",
+    tags: ["earthquake", "seismic", "events", "usgs"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "earthquakes were detected",
     contextNote:
@@ -1923,20 +1970,20 @@ const globalStatisticSeeds: StatisticSeed[] = [
     title: "Storms active",
     shortTitle: "Active storms",
     description:
-      "A mock-live directional estimate for organized storm systems active somewhere on Earth.",
-    shortDescription: "Mock-live weather systems",
+      "A directional estimate for organized storm systems active somewhere on Earth.",
+    shortDescription: "Weather-system estimate",
     category: "Events",
     icon: "cloud",
     yearlyEstimate: 1_100_000,
     unit: "storm-hours",
-    sourceName: "NOAA / WMO weather monitoring placeholder",
+    sourceName: "OnAverage weather-system estimate",
     sourceUrl: "https://public.wmo.int/",
     confidence: "low",
-    dataMode: "live",
+    dataMode: "estimated",
     sensitivity: "Sensitive",
     methodology:
-      "Uses storm-hours as a placeholder unit so a future weather API can replace the estimate without changing the UI.",
-    tags: ["storms", "weather", "events", "mock live", "fuzzy"],
+      "Uses storm-hours as a directional placeholder because global storm-system definitions vary and no weather API is connected.",
+    tags: ["storms", "weather", "events", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "storm-hours were active",
     contextNote:
@@ -1947,19 +1994,19 @@ const globalStatisticSeeds: StatisticSeed[] = [
     title: "News articles published",
     shortTitle: "News articles",
     description:
-      "A mock-live estimate of news articles and posts published by professional and semi-professional outlets worldwide.",
-    shortDescription: "Mock-live news flow",
+      "A directional estimate of news articles and posts published by professional and semi-professional outlets worldwide.",
+    shortDescription: "News publishing estimate",
     category: "Events",
     icon: "newspaper",
     yearlyEstimate: 365_000_000,
     unit: "articles",
-    sourceName: "OnAverage media volume placeholder",
+    sourceName: "OnAverage media volume estimate",
     confidence: "low",
-    dataMode: "live",
+    dataMode: "estimated",
     sensitivity: "Normal",
     methodology:
-      "Uses a rounded daily publishing-volume estimate. It is marked live because a future news API can replace this value.",
-    tags: ["news", "media", "articles", "events", "mock live", "fuzzy"],
+      "Uses a rounded daily publishing-volume estimate because no global news API is connected and publisher definitions vary.",
+    tags: ["news", "media", "articles", "events", "fuzzy"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "news articles were published",
   },
@@ -2019,7 +2066,6 @@ const healthStatistics: StatisticSeed[] = [
     isFuzzyEstimate: false,
     sinceOpenedLabel: "cancer cases were diagnosed",
     confidenceInterval: { low: 18_000_000, high: 20_800_000 },
-    historicalChange: { yearsAgo: 10, percentChange: +28, label: "10 years ago" },
   },
   {
     id: "vaccines-administered",
@@ -2101,7 +2147,6 @@ const educationStatistics: StatisticSeed[] = [
     tags: ["education", "graduation", "school", "university", "unesco"],
     isFuzzyEstimate: true,
     sinceOpenedLabel: "students graduated",
-    historicalChange: { yearsAgo: 10, percentChange: +22, label: "10 years ago" },
     surpriseFact:
       "For the first time in history, more women than men now complete higher education in most countries.",
   },
@@ -2337,20 +2382,25 @@ const foodStatistics: StatisticSeed[] = [
     shortDescription: "Global food waste estimate",
     category: "Food",
     icon: "trash-2",
-    yearlyEstimate: 1_300_000_000_000,
+    yearlyEstimate: 1_050_000_000_000,
     unit: "kg of food",
-    sourceName: "FAO — Global Food Losses and Food Waste 2011",
-    sourceUrl: "https://www.fao.org/3/mb060e/mb060e00.htm",
-    sourceYear: 2019,
+    sourceName: "UNEP Food Waste Index Report 2024",
+    sourceUrl: "https://www.unep.org/resources/publication/food-waste-index-report-2024",
+    sourceYear: 2022,
+    source: {
+      name: "UNEP Food Waste Index Report 2024",
+      url: "https://www.unep.org/resources/publication/food-waste-index-report-2024",
+    },
+    sourceTier: "official",
+    dataLastUpdated: 2022,
     confidence: "medium",
     dataMode: "estimated",
     sensitivity: "Normal",
     methodology:
-      "Uses the FAO estimate of 1.3 billion tonnes of food wasted per year, converted to kilograms.",
-    tags: ["food", "waste", "fao", "environment", "hunger"],
+      "Uses UNEP's Food Waste Index Report 2024 estimate of 1.05 billion tonnes of food waste in 2022 across household, food service, and retail sectors. Tonnes are converted to kilograms for the dashboard unit.",
+    tags: ["food", "waste", "unep", "environment", "hunger"],
     isFuzzyEstimate: false,
     sinceOpenedLabel: "kg of food were wasted",
-    historicalChange: { yearsAgo: 10, percentChange: +7, label: "10 years ago" },
     surpriseFact:
       "If food waste were a country, it would be the third-largest emitter of greenhouse gases in the world — after China and the United States.",
   },
@@ -2377,8 +2427,10 @@ const foodStatistics: StatisticSeed[] = [
   },
 ];
 
+const replacedGlobalSeedIds = new Set(["books-sold", "emails-sent"]);
+
 export const globalStatistics: Statistic[] = [
-  ...globalStatisticSeeds,
+  ...globalStatisticSeeds.filter((seed) => !replacedGlobalSeedIds.has(seed.id)),
   ...healthStatistics,
   ...educationStatistics,
   ...internetStatistics,

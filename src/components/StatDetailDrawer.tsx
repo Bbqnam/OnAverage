@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Globe2,
   LineChart,
+  ShieldCheck,
   Sprout,
   Timer,
   X,
@@ -16,21 +17,22 @@ import { DataModeBadge } from "./DataModeBadge";
 import { StatIcon } from "./StatIcon";
 import { getCategoryStyle } from "../lib/categoryStyles";
 import { getDisplayedConfidence } from "../lib/confidence";
-import { getHistoricalChange } from "../lib/historical";
-import { getFilteredHistoricalData } from "../lib/timeline";
+import { getHistoricalChange, getHistoricalSeries } from "../lib/historical";
 import {
   yearlyToPerDay,
   yearlyToPerHour,
   yearlyToPerMinute,
   yearlyToPerSecond,
 } from "../lib/calculations";
-import { formatLargeNumber } from "../lib/formatting";
+import { cleanDisplayText, formatLargeNumber } from "../lib/formatting";
 import type { Category, Confidence, SourceTier, Statistic } from "../types/statistic";
 
 interface StatDetailDrawerProps {
   statistic: Statistic | null;
   onClose: () => void;
 }
+
+const RECENT_FACT_COUNT = 3;
 
 type VisualNodeShape = "circle" | "pill" | "square";
 type VisualSceneKind =
@@ -434,25 +436,40 @@ const categoryAccentColors: Record<Category, string> = {
 
 const sourceTierBadgeStyles: Record<SourceTier, { label: string; className: string }> = {
   official: {
-    label: "Official source",
-    className: "border-blue-500/20 bg-blue-500/10 text-blue-700 dark:text-blue-300",
+    label: "Official",
+    className: "border-blue-500/15 bg-blue-500/5 text-blue-700/80 dark:text-blue-300/80",
   },
   industry: {
-    label: "Industry estimate",
-    className: "border-amber-500/20 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    label: "Industry",
+    className: "border-amber-500/15 bg-amber-500/5 text-amber-700/80 dark:text-amber-300/80",
   },
   estimated: {
-    label: "Modeled estimate",
+    label: "Modeled",
     className: "border-muted bg-muted text-muted-foreground",
   },
 };
+
+const infoTileStyles = {
+  source: {
+    card: "border-cyan-500/25 bg-cyan-500/10",
+    text: "text-cyan-700 dark:text-cyan-300",
+  },
+  confidence: {
+    card: "border-indigo-500/25 bg-indigo-500/10",
+    text: "text-indigo-700 dark:text-indigo-300",
+  },
+  yearly: {
+    card: "border-amber-500/25 bg-amber-500/10",
+    text: "text-amber-700 dark:text-amber-300",
+  },
+} as const;
 
 function SourceTierBadge({ sourceTier }: { sourceTier: SourceTier }) {
   const style = sourceTierBadgeStyles[sourceTier];
 
   return (
     <span
-      className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${style.className}`}
+      className={`inline-flex items-center rounded-full border px-1.5 py-px text-[10px] font-medium leading-4 ${style.className}`}
     >
       {style.label}
     </span>
@@ -468,7 +485,7 @@ function confidenceLabel(statistic: Statistic, displayedConfidence: Confidence):
   if (displayedConfidence === "medium")
     return "Grounded in public reporting, may be rounded";
   return statistic.isFuzzyEstimate
-    ? "Directional or playful estimate — useful for curiosity"
+    ? "Directional or playful estimate, useful for curiosity"
     : "Source coverage is incomplete or not globally standardized";
 }
 
@@ -509,43 +526,156 @@ function buildSmoothPath(points: SparklinePoint[]): string {
 }
 
 function getTooltipChange(firstValue: number, currentValue: number, firstYear: number): string {
-  if (firstValue <= 0) {
+  if (firstValue <= 0 && currentValue > 0) {
     return `New since ${firstYear}`;
   }
 
+  if (firstValue <= 0) {
+    return `No baseline in ${firstYear}`;
+  }
+
   const change = ((currentValue - firstValue) / firstValue) * 100;
-  return `${change >= 0 ? "+" : ""}${Math.round(change)}% vs ${firstYear}`;
+  return `${change >= 0 ? "+" : ""}${Math.round(change)}% compared with ${firstYear}`;
+}
+
+function cleanSourceName(name: string): string {
+  return cleanDisplayText(name.replace(/\s+placeholder\b/gi, ""));
+}
+
+function uniqueFacts(facts: string[]): string[] {
+  const seen = new Set<string>();
+
+  return facts
+    .map((fact) => fact.trim())
+    .filter((fact) => {
+      if (!fact || seen.has(fact)) return false;
+      seen.add(fact);
+      return true;
+    });
+}
+
+function buildFactPool(
+  statistic: Statistic,
+  citationName: string,
+  dataThroughYear: number | undefined,
+  displayedConfidence: Confidence,
+  historicalChange: ReturnType<typeof getHistoricalChange>,
+): string[] {
+  const perSecond = yearlyToPerSecond(statistic.yearlyEstimate);
+  const perMinute = yearlyToPerMinute(statistic.yearlyEstimate);
+  const perDay = yearlyToPerDay(statistic.yearlyEstimate);
+  const historicalFact = historicalChange
+    ? `${statistic.title} is ${historicalChange.percentChange >= 0 ? "up" : "down"} ${Math.abs(historicalChange.percentChange)}% compared with ${historicalChange.label}.`
+    : `${statistic.title} is modeled as a ${statistic.growthCurve} trend from ${statistic.startYear}.`;
+  const sourceFact = dataThroughYear
+    ? `The source data shown here runs through ${dataThroughYear}.`
+    : `The source shown here is ${citationName}.`;
+  const confidenceFact = `This stat is marked ${displayedConfidence} confidence based on its source coverage and uncertainty.`;
+  const modeFact = statistic.dataMode === "live"
+    ? "Live mode means the counter moves continuously from the yearly rate."
+    : statistic.dataMode === "semi-live"
+      ? "Semi-live mode uses a verified yearly figure and turns it into smaller moving rates."
+      : "Estimated mode means the number is a directional guide, not a live feed.";
+
+  return uniqueFacts([
+    statistic.surpriseFact ?? "",
+    `${statistic.title} averages about ${formatLargeNumber(statistic.yearlyEstimate, true)} ${statistic.unit} per year.`,
+    `That works out to about ${formatLargeNumber(perSecond, perSecond >= 10_000)} ${statistic.unit} every second.`,
+    `In one minute, the average is about ${formatLargeNumber(perMinute, perMinute >= 10_000)} ${statistic.unit}.`,
+    `In one day, the average reaches about ${formatLargeNumber(perDay, perDay >= 10_000)} ${statistic.unit}.`,
+    sourceFact,
+    confidenceFact,
+    modeFact,
+    historicalFact,
+    `${statistic.title} has been tracked in this app from ${statistic.startYear} onward.`,
+    statistic.sourceTier === "official"
+      ? "Official-source stats still use averages, so short-term spikes are smoothed out."
+      : statistic.sourceTier === "industry"
+        ? "Industry-source stats can be strong signals even when definitions vary by market."
+        : "Modeled stats are included when no complete global source publishes a clean total.",
+    statistic.confidenceInterval
+      ? `The uncertainty range spans roughly ${formatLargeNumber(statistic.confidenceInterval.low, true)} to ${formatLargeNumber(statistic.confidenceInterval.high, true)} ${statistic.unit} per year.`
+      : `The ${statistic.category.toLowerCase()} category uses ${statistic.unit} as its base unit for comparisons.`,
+  ]).slice(0, 10);
+}
+
+function pickRotatingFact(statisticId: string, facts: string[]): string | null {
+  if (facts.length === 0) return null;
+  if (facts.length <= RECENT_FACT_COUNT) {
+    return facts[Math.floor(Math.random() * facts.length)];
+  }
+
+  const storageKey = `onaverage:recent-facts:${statisticId}`;
+  let recentIndexes: number[] = [];
+
+  try {
+    const saved = window.localStorage.getItem(storageKey);
+    const parsed = saved ? JSON.parse(saved) : [];
+    recentIndexes = Array.isArray(parsed)
+      ? parsed.filter((index): index is number => Number.isInteger(index) && index >= 0 && index < facts.length)
+      : [];
+  } catch {
+    recentIndexes = [];
+  }
+
+  const blocked = new Set(recentIndexes.slice(0, RECENT_FACT_COUNT));
+  const candidates = facts
+    .map((_, index) => index)
+    .filter((index) => !blocked.has(index));
+  const pool = candidates.length > 0 ? candidates : facts.map((_, index) => index);
+  const selectedIndex = pool[Math.floor(Math.random() * pool.length)];
+
+  try {
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify([selectedIndex, ...recentIndexes.filter((index) => index !== selectedIndex)].slice(0, RECENT_FACT_COUNT)),
+    );
+  } catch {
+    // If storage is unavailable, random selection still works for this open.
+  }
+
+  return facts[selectedIndex];
+}
+
+function getTrendPoint(points: SparklinePoint[], progress: number): Pick<SparklinePoint, "x" | "y"> {
+  if (points.length === 0) {
+    return { x: sparklineLeft, y: sparklineBottom };
+  }
+
+  if (points.length === 1) {
+    return points[0];
+  }
+
+  const scaledProgress = Math.min(0.995, Math.max(0, progress)) * (points.length - 1);
+  const startIndex = Math.floor(scaledProgress);
+  const endIndex = Math.min(points.length - 1, startIndex + 1);
+  const segmentProgress = scaledProgress - startIndex;
+  const start = points[startIndex];
+  const end = points[endIndex];
+
+  return {
+    x: start.x + (end.x - start.x) * segmentProgress,
+    y: start.y + (end.y - start.y) * segmentProgress,
+  };
 }
 
 function StatSparklineHero({ statistic }: { statistic: Statistic }) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const animatedMarkerRef = useRef<HTMLDivElement>(null);
 
   const chart = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const axisStartYear = Math.max(statistic.startYear, currentYear - 9);
-    const filtered = getFilteredHistoricalData(statistic, currentYear - 9)
+    const series = getHistoricalSeries(statistic)
       .filter((point) => point.year <= currentYear)
       .sort((a, b) => a.year - b.year);
 
-    if (filtered.length < 3) {
-      return null;
-    }
-
-    const last = filtered[filtered.length - 1];
-    const series = last.year < currentYear
-      ? [
-          ...filtered,
-          ...Array.from({ length: currentYear - last.year }, (_, index) => ({
-            year: last.year + index + 1,
-            value: last.value,
-          })),
-        ]
-      : filtered;
+    const axisStartYear = series[0]?.year ?? currentYear - 9;
 
     if (series.length < 3) {
       return null;
     }
 
+    const latestYear = series[series.length - 1].year;
     const values = series.map((point) => point.value);
     const minValue = Math.min(...values);
     const maxValue = Math.max(...values);
@@ -554,9 +684,8 @@ function StatSparklineHero({ statistic }: { statistic: Statistic }) {
     const low = minValue - padding;
     const high = maxValue + padding;
     const range = high - low;
-    const average = values.reduce((sum, value) => sum + value, 0) / values.length;
     const points = series.map((point) => {
-      const denominator = Math.max(currentYear - axisStartYear, 1);
+      const denominator = Math.max(latestYear - axisStartYear, 1);
       const x =
         sparklineLeft +
         ((point.year - axisStartYear) / denominator) * (sparklineRight - sparklineLeft);
@@ -568,15 +697,17 @@ function StatSparklineHero({ statistic }: { statistic: Statistic }) {
     });
     const linePath = buildSmoothPath(points);
     const fillPath = `${linePath} L ${points[points.length - 1].x} ${sparklineBottom} L ${points[0].x} ${sparklineBottom} Z`;
-    const anomalies = points.filter((point) => point.value < average * 0.7);
-    const beganInsideWindow = statistic.startYear >= currentYear - 9;
+    const beganInsideWindow = statistic.startYear >= latestYear - 9;
+    const hasEstimatedPoints = points.some((point) => point.isEstimated);
+    const allEstimatedPoints = points.every((point) => point.isEstimated);
 
     return {
-      anomalies,
+      allEstimatedPoints,
       axisStartYear,
       beganInsideWindow,
-      currentYear,
+      currentYear: latestYear,
       fillPath,
+      hasEstimatedPoints,
       linePath,
       points,
     };
@@ -590,8 +721,36 @@ function StatSparklineHero({ statistic }: { statistic: Statistic }) {
   const gradientId = `sparkline-gradient-${statistic.id.replace(/[^a-z0-9-]/gi, "")}`;
   const points = chart.points;
   const firstPoint = points[0];
-  const lastPoint = points[points.length - 1];
   const hoverPoint = hoverIndex === null ? null : points[Math.min(hoverIndex, points.length - 1)];
+
+  useEffect(() => {
+    const markerElement = animatedMarkerRef.current;
+
+    if (!markerElement) {
+      return;
+    }
+
+    const marker = markerElement;
+    let frameId = 0;
+    const startedAt = performance.now();
+    const durationMs = 14_000;
+
+    function setProgress(progress: number) {
+      const point = getTrendPoint(points, progress);
+      marker.style.left = `${(point.x / sparklineWidth) * 100}%`;
+      marker.style.top = `${(point.y / sparklineHeight) * 100}%`;
+      marker.style.opacity = `${0.58 + Math.sin(progress * Math.PI) * 0.28}`;
+    }
+
+    function animate(now: number) {
+      setProgress(((now - startedAt) % durationMs) / durationMs);
+      frameId = requestAnimationFrame(animate);
+    }
+
+    setProgress(0);
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
+  }, [points, statistic.id]);
 
   function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -625,6 +784,24 @@ function StatSparklineHero({ statistic }: { statistic: Statistic }) {
           </linearGradient>
         </defs>
         <path d={chart.fillPath} fill={`url(#${gradientId})`} />
+        {[1 / 3, 2 / 3].map((section) => {
+          const x = sparklineLeft + (sparklineRight - sparklineLeft) * section;
+
+          return (
+            <line
+              key={`section-${section}`}
+              x1={x}
+              x2={x}
+              y1={sparklineTop + 2}
+              y2={sparklineBottom}
+              stroke="currentColor"
+              strokeDasharray="2 8"
+              strokeLinecap="round"
+              strokeOpacity="0.16"
+              strokeWidth="1"
+            />
+          );
+        })}
         <path
           d={chart.linePath}
           fill="none"
@@ -632,18 +809,6 @@ function StatSparklineHero({ statistic }: { statistic: Statistic }) {
           strokeLinecap="round"
           strokeWidth="3"
         />
-        {chart.anomalies.map((point) => (
-          <text
-            key={`anomaly-${point.year}`}
-            x={point.x}
-            y={Math.max(10, point.y - 9)}
-            fill="currentColor"
-            className="text-[10px] text-muted-foreground"
-            textAnchor="middle"
-          >
-            {point.year}
-          </text>
-        ))}
         {hoverPoint && (
           <>
             <line
@@ -703,32 +868,43 @@ function StatSparklineHero({ statistic }: { statistic: Statistic }) {
       </svg>
 
       <div
-        className="pointer-events-none absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-background/90 shadow-sm"
+        ref={animatedMarkerRef}
+        className="pointer-events-none absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-background/75 shadow-sm ring-1 ring-border/70 backdrop-blur"
         style={{
-          left: `${(lastPoint.x / sparklineWidth) * 100}%`,
-          top: `${(lastPoint.y / sparklineHeight) * 100}%`,
+          left: `${(firstPoint.x / sparklineWidth) * 100}%`,
+          top: `${(firstPoint.y / sparklineHeight) * 100}%`,
           color: accentColor,
+          opacity: 0.58,
         }}
         aria-hidden="true"
       >
-        <StatIcon name={statistic.icon} className="h-3.5 w-3.5" />
+        <StatIcon name={statistic.icon} className="h-3 w-3" />
       </div>
 
       {hoverPoint && (
         <div
-          className="pointer-events-none absolute z-20 min-w-32 rounded-md border border-border bg-popover px-2 py-1.5 text-xs text-popover-foreground shadow-md"
+          className="pointer-events-none absolute z-20 min-w-[11rem] max-w-[14rem] rounded-lg border border-border bg-background/95 px-3 py-2 text-sm text-foreground shadow-panel ring-1 ring-foreground/5 backdrop-blur"
           style={{
             left: `${(hoverPoint.x / sparklineWidth) * 100}%`,
-            top: `${Math.max(4, ((hoverPoint.y - 46) / sparklineHeight) * 100)}%`,
-            transform: hoverPoint.x > sparklineWidth - 150 ? "translateX(-100%)" : "translateX(8px)",
+            top: `${Math.max(6, ((hoverPoint.y - 76) / sparklineHeight) * 100)}%`,
+            transform: hoverPoint.x > sparklineWidth - 170
+              ? "translateX(calc(-100% - 8px))"
+              : "translateX(10px)",
           }}
         >
-          <p className="font-semibold tabular-nums">{hoverPoint.year}</p>
-          <p className="tabular-nums text-foreground">
-            {formatLargeNumber(hoverPoint.value, hoverPoint.value >= 10_000)}
-            <span className="ml-1 text-muted-foreground">{statistic.unit}</span>
+          <div className="flex items-start justify-between gap-3">
+            <p className="text-base font-bold leading-none tabular-nums">{hoverPoint.year}</p>
+            {hoverPoint.isEstimated && (
+              <span className="rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none text-amber-700 dark:text-amber-300">
+                Estimated
+              </span>
+            )}
+          </div>
+          <p className="mt-1 flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 font-semibold leading-snug tabular-nums">
+            <span>{formatLargeNumber(hoverPoint.value, hoverPoint.value >= 10_000)}</span>
+            <span className="text-xs font-medium text-muted-foreground">{statistic.unit}</span>
           </p>
-          <p className="text-muted-foreground">
+          <p className="mt-1 text-xs font-medium text-muted-foreground">
             {getTooltipChange(firstPoint.value, hoverPoint.value, firstPoint.year)}
           </p>
         </div>
@@ -1022,6 +1198,8 @@ function getThreePhaseIcons(icons: string[]): string[] {
 
 export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) {
   const [methodologyOpen, setMethodologyOpen] = useState(false);
+  const [selectedFact, setSelectedFact] = useState<string | null>(null);
+  const lastFactStatisticId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!statistic) return;
@@ -1035,6 +1213,32 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [onClose, statistic]);
 
+  useEffect(() => {
+    if (!statistic) {
+      lastFactStatisticId.current = null;
+      setSelectedFact(null);
+      return;
+    }
+
+    if (lastFactStatisticId.current === statistic.id) return;
+
+    const displayed = getDisplayedConfidence(statistic);
+    const citationForFact = statistic.source ?? {
+      name: statistic.sourceName,
+      url: statistic.sourceUrl ?? "",
+    };
+    const factPool = buildFactPool(
+      statistic,
+      cleanSourceName(citationForFact.name),
+      statistic.dataLastUpdated ?? statistic.sourceYear,
+      displayed.confidence,
+      getHistoricalChange(statistic),
+    );
+
+    lastFactStatisticId.current = statistic.id;
+    setSelectedFact(pickRotatingFact(statistic.id, factPool));
+  }, [statistic]);
+
   if (!statistic) return null;
 
   const categoryStyle = getCategoryStyle(statistic.category);
@@ -1043,8 +1247,17 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
     name: statistic.sourceName,
     url: statistic.sourceUrl ?? "",
   };
+  const citationName = cleanSourceName(citation.name);
   const dataThroughYear = statistic.dataLastUpdated ?? statistic.sourceYear;
   const historicalChange = getHistoricalChange(statistic);
+  const historicalSeries = getHistoricalSeries(statistic);
+  const estimatedSeriesLabel = historicalSeries.length === 0
+    ? null
+    : historicalSeries.every((point) => point.isEstimated)
+      ? "Estimated series"
+      : historicalSeries.some((point) => point.isEstimated)
+        ? "Includes estimates"
+        : null;
 
   const conversions = [
     {
@@ -1112,10 +1325,15 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
                 id="stat-drawer-title"
                 className="mt-0.5 text-xl font-semibold leading-tight sm:text-[1.35rem]"
               >
-                {statistic.title}
+                {cleanDisplayText(statistic.title)}
               </h2>
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 <DataModeBadge dataMode={statistic.dataMode} />
+                {estimatedSeriesLabel && (
+                  <span className="inline-flex items-center rounded-full border border-border bg-muted/50 px-1.5 py-px text-[10px] font-medium leading-4 text-muted-foreground">
+                    {estimatedSeriesLabel}
+                  </span>
+                )}
                 {statistic.sensitivity === "Sensitive" && (
                   <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
                     Contextual topic
@@ -1139,13 +1357,13 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
 
         {/* Description */}
         <p className="mt-3 text-sm leading-5 text-muted-foreground">
-          {statistic.description}
+          {cleanDisplayText(statistic.description)}
         </p>
 
         {/* Context note */}
         {statistic.contextNote && (
           <p className="mt-2 text-xs italic leading-5 text-muted-foreground/70">
-            {statistic.contextNote}
+            {cleanDisplayText(statistic.contextNote)}
           </p>
         )}
 
@@ -1154,23 +1372,25 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
           <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Converted averages
           </h3>
-          <div className="overflow-hidden rounded-lg border border-border bg-background/70">
+          <div className="grid grid-cols-2 gap-2">
             {conversions.map((conversion) => {
               const Icon = conversion.icon;
+              const isYearly = conversion.label === "Per year";
+
               return (
                 <div
                   key={conversion.label}
-                  className="flex items-center justify-between gap-3 border-b border-border px-2.5 py-2 last:border-b-0"
+                  className={`flex min-w-0 items-center justify-between gap-2 rounded-lg border border-border bg-background/70 px-2.5 py-2 ${isYearly ? "col-span-2" : ""}`}
                 >
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex min-w-0 items-center gap-2">
                     <div
                       className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${conversion.style}`}
                     >
                       <Icon className="h-3.5 w-3.5" aria-hidden="true" />
                     </div>
-                    <span className="text-sm font-medium">{conversion.label}</span>
+                    <span className="truncate text-sm font-medium">{conversion.label}</span>
                   </div>
-                  <span className="text-sm font-semibold tabular-nums">
+                  <span className="min-w-0 shrink-0 whitespace-nowrap text-right text-sm font-semibold tabular-nums">
                     {formatLargeNumber(conversion.value, conversion.value >= 10_000)}{" "}
                     <span className="text-xs font-normal text-muted-foreground">
                       {statistic.unit}
@@ -1186,12 +1406,12 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
         <div className="mt-3 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           {/* Source */}
           <div
-            className={`rounded-lg border ${categoryStyle.border} ${categoryStyle.iconBg} p-2.5`}
+            className={`rounded-lg border ${infoTileStyles.source.card} p-2.5`}
           >
-            <div className="mb-1 flex items-center gap-1.5">
-              <Globe2 className={`h-3.5 w-3.5 ${categoryStyle.text}`} aria-hidden="true" />
+            <div className="mb-1 flex min-w-0 items-center gap-1.5 whitespace-nowrap">
+              <Globe2 className={`h-3.5 w-3.5 shrink-0 ${infoTileStyles.source.text}`} aria-hidden="true" />
               <p
-                className={`text-[10px] font-semibold uppercase tracking-wider ${categoryStyle.text}`}
+                className={`text-[10px] font-semibold uppercase tracking-wider ${infoTileStyles.source.text}`}
               >
                 Source
               </p>
@@ -1203,11 +1423,11 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
                 rel="noreferrer"
                 className="inline-flex items-center gap-1 text-xs font-medium text-foreground hover:underline"
               >
-                <span className="line-clamp-2">{citation.name}</span>
+                <span className="line-clamp-2">{citationName}</span>
                 <ExternalLink className="h-3 w-3 shrink-0" aria-hidden="true" />
               </a>
             ) : (
-              <p className="line-clamp-2 text-xs font-medium">{citation.name}</p>
+              <p className="line-clamp-2 text-xs font-medium">{citationName}</p>
             )}
             {dataThroughYear && (
               <p className="mt-1 text-[11px] text-muted-foreground">
@@ -1217,41 +1437,46 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
           </div>
 
           {/* Confidence */}
-          <div className="rounded-lg border border-border bg-background/70 p-2.5">
-            <div className="mb-1 flex items-center justify-between gap-2">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div
+            className={`rounded-lg border ${infoTileStyles.confidence.card} p-2.5`}
+          >
+            <div className="mb-1 flex min-w-0 items-center gap-1.5 whitespace-nowrap">
+              <ShieldCheck className={`h-3.5 w-3.5 shrink-0 ${infoTileStyles.confidence.text}`} aria-hidden="true" />
+              <p className={`text-[10px] font-semibold uppercase tracking-wider ${infoTileStyles.confidence.text}`}>
                 Confidence
               </p>
-              <div className="flex flex-wrap justify-end gap-1">
-                {statistic.sourceTier && <SourceTierBadge sourceTier={statistic.sourceTier} />}
-                <ConfidenceBadge
-                  confidence={displayedConfidence.confidence}
-                  title={displayedConfidence.tooltip}
-                />
-              </div>
+            </div>
+            <div className="mb-1 flex flex-wrap gap-1">
+              {statistic.sourceTier && <SourceTierBadge sourceTier={statistic.sourceTier} />}
+              <ConfidenceBadge
+                confidence={displayedConfidence.confidence}
+                title={displayedConfidence.tooltip}
+              />
             </div>
             <p className="text-xs leading-4 text-muted-foreground">
-              {confidenceLabel(statistic, displayedConfidence.confidence)}
+              {cleanDisplayText(confidenceLabel(statistic, displayedConfidence.confidence))}
             </p>
           </div>
 
           {/* Yearly seed + confidence interval */}
-          <div className="rounded-lg border border-border bg-background/70 p-2.5">
-            <div className="mb-1 flex items-center gap-1.5">
-              <Sprout className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          <div
+            className={`rounded-lg border ${infoTileStyles.yearly.card} p-2.5`}
+          >
+            <div className="mb-1 flex min-w-0 items-center gap-1.5 whitespace-nowrap">
+              <Sprout className={`h-3.5 w-3.5 shrink-0 ${infoTileStyles.yearly.text}`} aria-hidden="true" />
+              <p className={`text-[10px] font-semibold uppercase tracking-wider ${infoTileStyles.yearly.text}`}>
                 Yearly estimate
               </p>
             </div>
-            <p className="text-lg font-semibold tabular-nums">
-              {formatLargeNumber(statistic.yearlyEstimate, true)}
+            <p className="flex min-w-0 items-baseline gap-1.5 whitespace-nowrap text-lg font-semibold tabular-nums">
+              <span>{formatLargeNumber(statistic.yearlyEstimate, true)}</span>
+              <span className="text-xs font-normal text-muted-foreground">{statistic.unit}</span>
             </p>
-            <p className="text-xs text-muted-foreground">{statistic.unit}</p>
             {statistic.confidenceInterval && (
               <p className="mt-1 text-[11px] text-muted-foreground">
                 Range:{" "}
                 <span className="font-medium tabular-nums">
-                  {formatLargeNumber(statistic.confidenceInterval.low, true)}–
+                  {formatLargeNumber(statistic.confidenceInterval.low, true)} to{" "}
                   {formatLargeNumber(statistic.confidenceInterval.high, true)}
                 </span>
               </p>
@@ -1280,13 +1505,13 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
                 {historicalChange.percentChange >= 0 ? "+" : ""}
                 {historicalChange.percentChange}%
               </span>{" "}
-              compared to {historicalChange.label}.
+              compared with {historicalChange.label}.
             </p>
           </div>
         )}
 
         {/* Surprise fact */}
-        {statistic.surpriseFact && (
+        {selectedFact && (
           <div className="mt-2.5 rounded-lg border border-amber-500/20 bg-amber-500/5 p-2.5">
             <div className="flex items-center gap-2">
               <span className="text-base">💡</span>
@@ -1295,12 +1520,12 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
               </p>
             </div>
             <p className="mt-1.5 text-sm leading-5 text-foreground">
-              {statistic.surpriseFact}
+              {cleanDisplayText(selectedFact)}
             </p>
           </div>
         )}
 
-        {/* Methodology — collapsed by default */}
+        {/* Methodology, collapsed by default */}
         <div className="mt-2.5 overflow-hidden rounded-lg border border-border">
           <button
             type="button"
@@ -1317,7 +1542,9 @@ export function StatDetailDrawer({ statistic, onClose }: StatDetailDrawerProps) 
           </button>
           {methodologyOpen && (
             <div className="border-t border-border px-3 py-2.5">
-              <p className="text-sm leading-5 text-muted-foreground">{statistic.methodology}</p>
+              <p className="text-sm leading-5 text-muted-foreground">
+                {cleanDisplayText(statistic.methodology)}
+              </p>
             </div>
           )}
         </div>

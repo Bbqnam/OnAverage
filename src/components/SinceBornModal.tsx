@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { ChevronDown, Sparkles, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { categories } from "../data/categories";
 import { getCategoryStyle } from "../lib/categoryStyles";
@@ -20,6 +20,23 @@ interface SinceBornModalProps {
 
 const categoryOrder = new Map(categories.map((category, index) => [category, index]));
 
+const curatedHighlightGroups = [
+  {
+    label: "Life scale",
+    ids: ["people-born", "people-died", "meals-eaten", "coffee-consumed"],
+  },
+  {
+    label: "Planet & movement",
+    ids: ["co2-emitted", "trees-cut-down", "flights-taking-off"],
+  },
+  {
+    label: "Digital life",
+    ids: ["internet-searches", "messages-sent", "ai-prompts-asked"],
+  },
+];
+
+const curatedHighlightIds = curatedHighlightGroups.flatMap((group) => group.ids);
+
 function getTimelineGroup(statistic: Statistic, selectedStartDate: Date, now: Date): number {
   const elapsed = getCumulativeValue(statistic, selectedStartDate, now);
   if (elapsed.isUnavailable) return 2;
@@ -34,6 +51,7 @@ export function SinceBornModal({
   onSaveBirthYear,
 }: SinceBornModalProps) {
   const [inputYear, setInputYear] = useState(birthYear ? String(birthYear) : "");
+  const [showAll, setShowAll] = useState(false);
   const now = new Date();
   const currentYear = now.getFullYear();
   const year = Number(inputYear);
@@ -60,6 +78,28 @@ export function SinceBornModal({
       })
       .map(({ statistic }) => statistic);
   }, [isValidYear, selectedStartDate, now, statistics]);
+
+  const curatedGroups = useMemo(() => {
+    if (!selectedStartDate) return [];
+
+    return curatedHighlightGroups
+      .map((group) => ({
+        ...group,
+        statistics: group.ids
+          .flatMap((id) => {
+            const statistic = statistics.find((item) => item.id === id);
+
+            if (!statistic) return [];
+
+            return getCumulativeValue(statistic, selectedStartDate, now).isUnavailable
+              ? []
+              : [statistic];
+          }),
+      }))
+      .filter((group) => group.statistics.length > 0);
+  }, [now, selectedStartDate, statistics]);
+
+  const hiddenSignalCount = Math.max(0, sortedStatistics.length - curatedHighlightIds.length);
 
   const hasClampedSignals =
     selectedStartDate !== null &&
@@ -127,67 +167,73 @@ export function SinceBornModal({
           )}
         </div>
 
-        {/* Card grid — scrollable */}
+        {/* Card grid, scrollable */}
         <div className="overflow-y-auto p-4">
-          {isValidYear ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {sortedStatistics.map((stat, index) => {
-                if (!selectedStartDate) return null;
-
-                const timeline = getCumulativeValue(stat, selectedStartDate, now);
-                const timelineLabel = getTimelineLabel(stat, selectedStartDate, now);
-                const narrative = getBornBeforeNarrative(stat, year);
-                const categoryStyle = getCategoryStyle(stat.category);
-                const formatted = formatLargeNumber(timeline.value, timeline.value >= 10_000);
-
-                return (
-                  <div
-                    key={`${stat.id}-${index}`}
-                    className={`flex min-w-0 flex-col gap-2 rounded-lg border border-y border-r bg-card p-3 ${categoryStyle.leftBorder} ${
-                      timeline.isUnavailable ? "opacity-40 grayscale" : ""
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
-                      >
-                        <StatIcon name={stat.icon} className="h-3.5 w-3.5" />
-                      </div>
-                      <p className="truncate text-xs font-medium text-muted-foreground">
-                        {stat.shortTitle}
-                      </p>
-                    </div>
-                    <div className="min-w-0">
-                      <p className={`truncate text-2xl font-bold tabular-nums leading-tight ${categoryStyle.text}`}>
-                        {timeline.isUnavailable ? "—" : formatted}
-                      </p>
-                      {timeline.isUnavailable ? (
-                        <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
-                          Not available before {stat.startYear}
-                        </p>
-                      ) : timelineLabel ? (
-                        <p
-                          className={`mt-0.5 truncate text-[11px] ${categoryStyle.text} opacity-60`}
-                          title={`This metric is only counted from when it realistically became available (${stat.startYear})`}
-                        >
-                          {timelineLabel}
-                        </p>
-                      ) : null}
-                      {narrative && (
-                        <p
-                          className="mt-0.5 truncate text-[11px] italic text-muted-foreground"
-                          title={narrative}
-                        >
-                          {narrative}
-                        </p>
-                      )}
-                      <p className="mt-0.5 truncate text-xs font-medium text-foreground">
-                        {stat.sinceOpenedLabel}
-                      </p>
-                    </div>
+          {isValidYear && selectedStartDate ? (
+            <div className="space-y-4">
+              <div className="flex flex-col gap-2 rounded-lg border border-border bg-secondary/30 px-3 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                    <Sparkles className="h-4 w-4" aria-hidden="true" />
                   </div>
-                );
-              })}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">
+                      {showAll ? "All signals" : "Curated highlights"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {showAll
+                        ? "Full catalog, sorted by availability and category."
+                        : "10 hand picked counters with the most human scale."}
+                    </p>
+                  </div>
+                </div>
+                {hiddenSignalCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAll((current) => !current)}
+                    className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground transition hover:bg-accent"
+                  >
+                    {showAll ? "Show highlights" : `Show all ${sortedStatistics.length}`}
+                    <ChevronDown
+                      className={`h-3.5 w-3.5 transition ${showAll ? "rotate-180" : ""}`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                )}
+              </div>
+
+              {!showAll ? (
+                curatedGroups.map((group) => (
+                  <section key={group.label} className="space-y-2">
+                    <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                      {group.label}
+                    </h3>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {group.statistics.map((stat) => (
+                        <SinceBornCard
+                          key={stat.id}
+                          statistic={stat}
+                          selectedStartDate={selectedStartDate}
+                          now={now}
+                          birthYear={year}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ))
+              ) : (
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {sortedStatistics.map((stat) => (
+                    <SinceBornCard
+                      key={stat.id}
+                      statistic={stat}
+                      selectedStartDate={selectedStartDate}
+                      now={now}
+                      birthYear={year}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -206,6 +252,73 @@ export function SinceBornModal({
             Cumulative estimates are clamped to each signal's realistic start date.
           </p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+interface SinceBornCardProps {
+  statistic: Statistic;
+  selectedStartDate: Date;
+  now: Date;
+  birthYear: number;
+}
+
+function SinceBornCard({
+  statistic,
+  selectedStartDate,
+  now,
+  birthYear,
+}: SinceBornCardProps) {
+  const timeline = getCumulativeValue(statistic, selectedStartDate, now);
+  const timelineLabel = getTimelineLabel(statistic, selectedStartDate, now);
+  const narrative = getBornBeforeNarrative(statistic, birthYear);
+  const categoryStyle = getCategoryStyle(statistic.category);
+  const formatted = formatLargeNumber(timeline.value, timeline.value >= 10_000);
+
+  return (
+    <div
+      className={`flex min-w-0 flex-col gap-2 rounded-lg border border-y border-r bg-card p-3 ${categoryStyle.leftBorder} ${
+        timeline.isUnavailable ? "opacity-40 grayscale" : ""
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <div
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
+        >
+          <StatIcon name={statistic.icon} className="h-3.5 w-3.5" />
+        </div>
+        <p className="truncate text-xs font-medium text-muted-foreground">
+          {statistic.shortTitle}
+        </p>
+      </div>
+      <div className="min-w-0">
+        <p className={`truncate text-2xl font-bold tabular-nums leading-tight ${categoryStyle.text}`}>
+          {timeline.isUnavailable ? "Not available" : formatted}
+        </p>
+        {timeline.isUnavailable ? (
+          <p className="mt-0.5 truncate text-[11px] text-muted-foreground">
+            Not available before {statistic.startYear}
+          </p>
+        ) : timelineLabel ? (
+          <p
+            className={`mt-0.5 truncate text-[11px] ${categoryStyle.text} opacity-60`}
+            title={`This metric is only counted from when it realistically became available (${statistic.startYear})`}
+          >
+            {timelineLabel}
+          </p>
+        ) : null}
+        {narrative && (
+          <p
+            className="mt-0.5 truncate text-[11px] italic text-muted-foreground"
+            title={narrative}
+          >
+            {narrative}
+          </p>
+        )}
+        <p className="mt-0.5 truncate text-xs font-medium text-foreground">
+          {statistic.sinceOpenedLabel}
+        </p>
       </div>
     </div>
   );
