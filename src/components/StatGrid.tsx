@@ -71,17 +71,17 @@ export function StatGrid({
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-9">
       {groupedStatistics.map((group) => {
         const categoryStyle = getCategoryStyle(group.category);
 
         return (
           <section key={group.category}>
-            <div className="mb-2 flex items-end justify-between gap-3">
+            <div className="mb-3 flex items-end justify-between gap-3">
               <div className="flex items-center gap-3">
-                <span className={`h-7 w-1 rounded-full ${categoryStyle.line}`} />
+                <span className={`h-9 w-1 rounded-full ${categoryStyle.line}`} />
                 <div>
-                  <h2 className="text-lg font-semibold tracking-normal">{group.category}</h2>
+                  <h2 className="text-xl font-semibold tracking-[-0.025em]">{group.category}</h2>
                   <p className="text-xs text-muted-foreground">
                     {group.total > group.statistics.length
                       ? `${group.statistics.length} of ${group.total} shown`

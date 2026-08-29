@@ -13,7 +13,7 @@ export function TimeScaleToggle({
   onScaleChange,
 }: TimeScaleToggleProps) {
   return (
-    <div className="no-scrollbar flex min-w-0 items-center gap-1.5 overflow-x-auto rounded-lg border border-border bg-card p-0.5 shadow-subtle">
+    <div className="no-scrollbar flex min-w-0 items-center gap-1 overflow-x-auto rounded-xl border border-border/70 bg-background/60 p-1">
       <div className="flex h-8 shrink-0 items-center gap-1.5 px-2 text-xs font-medium text-muted-foreground">
         <Timer className="h-3.5 w-3.5" aria-hidden="true" />
         <span className="hidden sm:inline">Time scale</span>
@@ -27,7 +27,7 @@ export function TimeScaleToggle({
               key={scale}
               type="button"
               onClick={() => onScaleChange(scale)}
-              className={`h-8 whitespace-nowrap rounded-md px-2 text-xs font-medium transition ${
+              className={`h-8 whitespace-nowrap rounded-lg px-2.5 text-xs font-medium transition ${
                 isSelected
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"

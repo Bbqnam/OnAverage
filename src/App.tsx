@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeftRight, Baby, Camera, Globe, Shuffle } from "lucide-react";
 import { AppShell } from "./components/AppShell";
 import { CategoryTabs } from "./components/CategoryTabs";
 import { CompareSignals } from "./components/CompareSignals";
+import { DashboardHero } from "./components/DashboardHero";
 import { FeaturedStatCard } from "./components/FeaturedStatCard";
 import { Header } from "./components/Header";
 import { LastHourNarrative } from "./components/LastHourNarrative";
@@ -87,7 +87,7 @@ function App() {
     });
   }, [dataset, searchTerm]);
 
-  const isSearchMode = trimmedSearchTerm.length > 0 && searchResults.length > 0;
+  const isSearchMode = trimmedSearchTerm.length > 0;
 
   const filteredStatistics = useMemo(() => {
     if (dataset.status !== "available") return [];
@@ -107,15 +107,6 @@ function App() {
   const featuredStatistic = useMemo(
     () => getFeaturedStatistic(dataset.statistics),
     [dataset.statistics],
-  );
-
-  const myWorldPreviewStats = useMemo(
-    () =>
-      prefs.favorites
-        .map((id) => dataset.statistics.find((statistic) => statistic.id === id))
-        .filter((statistic): statistic is Statistic => Boolean(statistic))
-        .slice(0, 5),
-    [dataset.statistics, prefs.favorites],
   );
 
   function openStatistic(statistic: Statistic) {
@@ -157,8 +148,8 @@ function App() {
 
       {isSearchMode ? (
         <>
-          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
-            <span>
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground shadow-subtle">
+            <span aria-live="polite">
               {searchResults.length} result{searchResults.length === 1 ? "" : "s"} for “{trimmedSearchTerm}”
             </span>
           </div>
@@ -177,7 +168,18 @@ function App() {
         </>
       ) : (
         <>
-          <section className="grid min-w-0 gap-2 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
+          <DashboardHero
+            countryName={dataset.name}
+            signalCount={dataset.statistics.length}
+            categoryCount={new Set(dataset.statistics.map((statistic) => statistic.category)).size}
+            favoritesCount={prefs.favorites.length}
+            activePanel={activePanel}
+            onSurprise={showRandomStatistic}
+            onOpenSinceBorn={() => setShowSinceBorn(true)}
+            onTogglePanel={togglePanel}
+          />
+
+          <section className="toolbar-surface grid min-w-0 gap-2 rounded-2xl border border-border/80 bg-card/80 p-1.5 shadow-subtle backdrop-blur-sm xl:grid-cols-[minmax(0,1fr)_auto] xl:items-center">
             <div className="min-w-0 flex-1">
               <CategoryTabs
                 selectedTab={selectedTab}
@@ -187,104 +189,6 @@ function App() {
             </div>
             <div className="min-w-0 lg:shrink-0">
               <TimeScaleToggle selectedScale={selectedScale} onScaleChange={setSelectedScale} />
-            </div>
-          </section>
-
-          {/* Control bar */}
-          <section className="rounded-lg border border-border bg-card px-3 py-2 text-card-foreground shadow-subtle">
-            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h2 className="text-sm font-semibold tracking-normal">World overview</h2>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Live-feeling counters from average yearly estimates.
-                </p>
-              </div>
-              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-                {/* Shuffle / surprise */}
-                <button
-                  type="button"
-                  onClick={showRandomStatistic}
-                  className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md bg-primary px-2.5 text-xs font-medium text-primary-foreground transition hover:opacity-90"
-                >
-                  <Shuffle className="h-3.5 w-3.5" aria-hidden="true" />
-                  Surprise me
-                </button>
-
-                {/* Since I was born */}
-                <button
-                  type="button"
-                  onClick={() => setShowSinceBorn(true)}
-                  className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border border-border bg-background px-2.5 text-xs font-medium text-foreground transition hover:bg-accent"
-                >
-                  <Baby className="h-3.5 w-3.5" aria-hidden="true" />
-                  Since I was born
-                </button>
-
-                {/* My World */}
-                <div className="group relative">
-                  <button
-                    type="button"
-                    onClick={() => togglePanel("myworld")}
-                    className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition ${
-                      activePanel === "myworld"
-                        ? "border-primary/30 bg-primary/10 text-primary"
-                        : "border-border bg-background text-foreground hover:bg-accent"
-                    }`}
-                  >
-                    <Globe className="h-3.5 w-3.5" aria-hidden="true" />
-                    My World{prefs.favorites.length > 0 && ` (${prefs.favorites.length})`}
-                  </button>
-                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-1 hidden w-56 rounded-lg border border-border bg-popover p-2 text-xs text-popover-foreground shadow-panel group-hover:block">
-                    {myWorldPreviewStats.length > 0 ? (
-                      <>
-                        <p className="mb-1 font-semibold">Saved signals</p>
-                        <div className="space-y-1">
-                          {myWorldPreviewStats.map((statistic) => (
-                            <p key={statistic.id} className="truncate text-muted-foreground">
-                              {statistic.title}
-                            </p>
-                          ))}
-                        </div>
-                      </>
-                    ) : (
-                      <p className="text-muted-foreground">Star a card to save it here.</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Compare */}
-                <div className="group relative">
-                  <button
-                    type="button"
-                    onClick={() => togglePanel("compare")}
-                    className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition ${
-                      activePanel === "compare"
-                        ? "border-primary/30 bg-primary/10 text-primary"
-                        : "border-border bg-background text-foreground hover:bg-accent"
-                    }`}
-                  >
-                    <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
-                    Compare
-                  </button>
-                  <div className="pointer-events-none absolute right-0 top-full z-20 mt-1 hidden w-52 rounded-lg border border-border bg-popover p-2 text-xs text-popover-foreground shadow-panel group-hover:block">
-                    Compare any two signals side by side.
-                  </div>
-                </div>
-
-                {/* Share snapshot */}
-                <button
-                  type="button"
-                  onClick={() => togglePanel("snapshot")}
-                  className={`inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition ${
-                    activePanel === "snapshot"
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-border bg-background text-foreground hover:bg-accent"
-                  }`}
-                >
-                  <Camera className="h-3.5 w-3.5" aria-hidden="true" />
-                  Share
-                </button>
-              </div>
             </div>
           </section>
 
@@ -349,7 +253,7 @@ function App() {
             onOpenStatistic={openStatistic}
           />
 
-          <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
+          <div className="flex items-center justify-between gap-3 border-t border-border/70 pt-5 text-sm text-muted-foreground">
             <span>
               Showing {filteredStatistics.length} of {dataset.statistics.length} signals for{" "}
               {dataset.name}.

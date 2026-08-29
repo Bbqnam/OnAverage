@@ -1,4 +1,4 @@
-export function getBalancedGridClass(itemCount: number, gapClass = "gap-2.5"): string {
+export function getBalancedGridClass(itemCount: number, gapClass = "gap-3"): string {
   const baseClass = `grid ${gapClass}`;
 
   if (itemCount <= 1) {

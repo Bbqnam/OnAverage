@@ -16,7 +16,7 @@ const swatches: Record<AccentTheme, string> = {
 
 export function AccentSelector({ value, onChange }: AccentSelectorProps) {
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-border bg-card p-0.5">
+    <div className="hidden items-center gap-0.5 rounded-xl border border-border bg-card/70 p-0.5 xl:flex">
       {accentThemes.map((accent) => {
         const isSelected = value === accent;
 
@@ -25,7 +25,7 @@ export function AccentSelector({ value, onChange }: AccentSelectorProps) {
             key={accent}
             type="button"
             onClick={() => onChange(accent)}
-            className={`relative flex h-8 w-8 items-center justify-center rounded-md transition hover:bg-accent ${
+            className={`relative flex h-8 w-7 items-center justify-center rounded-lg transition hover:bg-accent ${
               isSelected ? "bg-accent ring-1 ring-ring/35" : ""
             }`}
             aria-label={`Use ${accent} accent`}

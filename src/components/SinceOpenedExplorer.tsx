@@ -117,15 +117,15 @@ export function SinceOpenedExplorer({
   const interestingFact = createInterestingFact(factStatistic);
   const movementContext = createMovementContext(totalSinceOpened);
   return (
-    <section className="rounded-lg border border-border bg-card p-2.5 text-card-foreground shadow-subtle">
-      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+    <section className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-subtle sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-secondary text-secondary-foreground">
-            <Activity className="h-3.5 w-3.5" aria-hidden="true" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Activity className="h-4 w-4" aria-hidden="true" />
           </div>
 
           <div>
-            <h2 className="text-sm font-semibold">Since you opened</h2>
+            <h2 className="text-base font-semibold tracking-tight">Since you opened</h2>
             <p className="text-xs text-muted-foreground">
               A few moving snapshots from the world.
             </p>
@@ -155,13 +155,13 @@ export function SinceOpenedExplorer({
         </div>
       </div>
 
-      <div className="mt-2.5">
-        <div className="flex flex-col items-center justify-center rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 text-center">
+      <div className="mt-4">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-primary/20 bg-primary/5 px-4 py-5 text-center">
           <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
             Total movement
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            <strong className="text-base text-foreground">
+            <strong className="text-xl font-semibold tracking-tight text-foreground">
               {formatLargeNumber(totalSinceOpened, totalSinceOpened >= 100_000)}
             </strong>{" "}
             modeled events since you opened
@@ -175,7 +175,7 @@ export function SinceOpenedExplorer({
         </div>
       </div>
 
-      <div className="mt-2.5 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
         {highlights.map((statistic) => {
           const cumulative = getCumulativeValue(statistic, selectedStartDate, currentDate);
           const timelineLabel = getTimelineLabel(statistic, selectedStartDate, currentDate);
@@ -186,7 +186,7 @@ export function SinceOpenedExplorer({
               key={statistic.id}
               type="button"
               onClick={() => onOpenStatistic(statistic)}
-              className={`flex items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-left transition hover:-translate-y-0.5 ${categoryStyle.hover} ${categoryStyle.glow}`}
+              className={`flex items-center gap-3 rounded-xl border border-border bg-background/70 px-3 py-2.5 text-left transition hover:-translate-y-0.5 ${categoryStyle.hover} ${categoryStyle.glow}`}
             >
               <div
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}

@@ -117,36 +117,36 @@ export function FeaturedStatCard({
 
   return (
     <section
-      className={`relative overflow-hidden rounded-lg border bg-card text-card-foreground shadow-subtle ${categoryStyle.leftBorder}`}
+      className={`relative overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-subtle ${categoryStyle.leftBorder}`}
     >
       <div className="grid gap-0 xl:grid-cols-[minmax(0,0.75fr)_minmax(380px,1.25fr)]">
         <button
           type="button"
           onClick={() => onOpen(activeStatistic)}
-          className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-3 px-3 py-3 text-left transition hover:bg-accent/30 sm:grid-cols-[auto_minmax(0,1fr)_auto]"
+          className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-4 px-5 py-5 text-left transition hover:bg-accent/30 sm:grid-cols-[auto_minmax(0,1fr)_auto] lg:px-6 lg:py-6"
         >
           <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${categoryStyle.iconBg} ${categoryStyle.text}`}
           >
-            <StatIcon name={activeStatistic.icon} className="h-4 w-4" />
+            <StatIcon name={activeStatistic.icon} className="h-5 w-5" />
           </div>
 
           <div className="min-w-0 flex-1">
             <p
               className={`text-[10px] font-semibold uppercase tracking-widest ${categoryStyle.text}`}
             >
-              Random average
+              Featured signal
             </p>
-            <h2 className="truncate text-base font-semibold leading-snug sm:text-lg">
+            <h2 className="mt-1 truncate text-lg font-semibold leading-snug tracking-tight sm:text-xl">
               {cleanDisplayText(activeStatistic.title)}
             </h2>
-            <p className="truncate text-xs text-muted-foreground">
+            <p className="mt-1 truncate text-xs text-muted-foreground">
               {cleanDisplayText(activeStatistic.shortDescription)}
             </p>
           </div>
 
           <div className="col-span-2 min-w-0 text-left sm:col-span-1 sm:text-right">
-            <p className="text-2xl font-semibold tabular-nums leading-none text-foreground/90">
+            <p className="text-3xl font-semibold tabular-nums leading-none tracking-[-0.035em] text-foreground/95">
               {cumulative.isUnavailable
                 ? "Not available"
                 : formatLargeNumber(cumulative.value, cumulative.value >= 100_000)}
@@ -177,7 +177,7 @@ export function FeaturedStatCard({
         </button>
 
         {dashboardStats.supporting.length > 0 && (
-          <div className="grid min-w-0 grid-cols-2 gap-1.5 border-t border-border p-2.5 md:grid-cols-3 xl:border-l xl:border-t-0">
+          <div className="grid min-w-0 grid-cols-2 gap-2 border-t border-border p-3 md:grid-cols-3 xl:border-l xl:border-t-0 xl:p-4">
             {dashboardStats.supporting.map((supportingStatistic) => (
               <SupportingStatButton
                 key={supportingStatistic.id}
@@ -217,7 +217,7 @@ function SupportingStatButton({
     <button
       type="button"
       onClick={() => onOpen(statistic)}
-      className={`flex min-w-0 items-center gap-2 rounded-md border border-border/70 bg-background/50 px-2 py-1.5 text-left transition hover:bg-accent ${
+      className={`flex min-w-0 items-center gap-2.5 rounded-xl border border-border/70 bg-background/50 px-3 py-2.5 text-left transition hover:-translate-y-0.5 hover:border-primary/20 hover:bg-accent ${
         cumulative.isUnavailable ? "opacity-40 grayscale" : ""
       }`}
       aria-label={`Open ${statistic.title} details`}

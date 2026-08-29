@@ -43,8 +43,8 @@ const tabIcons: Record<DashboardTab, LucideIcon> = {
 
 export function CategoryTabs({ selectedTab, statistics, onTabChange }: CategoryTabsProps) {
   return (
-    <nav className="no-scrollbar min-w-0 overflow-x-auto rounded-lg border border-border bg-card p-0.5 shadow-subtle">
-      <div className="flex w-max gap-0.5">
+    <nav className="no-scrollbar min-w-0 overflow-x-auto rounded-xl">
+      <div className="flex w-max gap-1">
         {dashboardTabs.map((tab) => {
           const count =
             tab === "All"
@@ -58,9 +58,9 @@ export function CategoryTabs({ selectedTab, statistics, onTabChange }: CategoryT
               key={tab}
               type="button"
               onClick={() => onTabChange(tab)}
-              className={`flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium transition ${
+              className={`flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium transition ${
                 isSelected
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
               }`}
               aria-pressed={isSelected}

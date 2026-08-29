@@ -36,7 +36,7 @@ function isAccentTheme(value: string | null): value is AccentTheme {
 
 export function getStoredThemeSettings(): ThemeSettings {
   if (typeof window === "undefined") {
-    return { mode: "dark", accent: "neutral" };
+    return { mode: "dark", accent: "blue" };
   }
 
   const storedMode = window.localStorage.getItem(THEME_MODE_KEY);
@@ -44,7 +44,7 @@ export function getStoredThemeSettings(): ThemeSettings {
 
   return {
     mode: isThemeMode(storedMode) ? storedMode : "dark",
-    accent: isAccentTheme(storedAccent) ? storedAccent : "neutral",
+    accent: isAccentTheme(storedAccent) ? storedAccent : "blue",
   };
 }
 

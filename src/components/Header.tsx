@@ -1,4 +1,4 @@
-import { BarChart3 } from "lucide-react";
+import { Activity, BarChart3 } from "lucide-react";
 import { CountrySelector } from "./CountrySelector";
 import { SearchBar } from "./SearchBar";
 import { ThemeToggle } from "./ThemeToggle";
@@ -18,30 +18,38 @@ export function Header({
   onSearchChange,
 }: HeaderProps) {
   return (
-    <header className="sticky top-0 z-30 -mx-2.5 border-b border-border bg-background/88 px-2.5 py-2 backdrop-blur supports-[backdrop-filter]:bg-background/72 sm:-mx-4 sm:px-4 lg:-mx-5 lg:px-5">
-      <div className="mx-auto flex w-full min-w-0 max-w-[1680px] flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground sm:h-9 sm:w-9">
-            <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5" aria-hidden="true" />
+    <header className="sticky top-0 z-30 -mx-3 mb-1 border-b border-border/70 bg-background/80 px-3 py-3 backdrop-blur-xl supports-[backdrop-filter]:bg-background/65 sm:-mx-5 sm:px-5 lg:-mx-8 lg:px-8">
+      <div className="mx-auto flex w-full min-w-0 max-w-[1480px] flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="logo-mark relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-[0_8px_22px_-10px_hsl(var(--primary)/0.9)]">
+              <BarChart3 className="h-[18px] w-[18px]" aria-hidden="true" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="truncate text-lg font-semibold tracking-[-0.025em] text-foreground">
+                OnAverage
+              </h1>
+              <div className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex">
+                <Activity className="h-3 w-3 text-emerald-500" aria-hidden="true" />
+                Global signals, made tangible
+              </div>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h1 className="truncate text-lg font-semibold tracking-normal text-foreground sm:text-xl">
-              OnAverage
-            </h1>
-            <p className="hidden truncate text-xs text-muted-foreground sm:block">
-              A polished curiosity dashboard for average estimates.
-            </p>
+          <div className="lg:hidden">
+            <ThemeToggle />
           </div>
         </div>
 
-        <div className="grid w-full min-w-0 flex-1 gap-2 md:grid-cols-[minmax(220px,1fr)_auto] lg:max-w-5xl lg:items-center lg:justify-end">
+        <div className="grid w-full min-w-0 flex-1 grid-cols-[minmax(0,1fr)_auto] gap-2.5 lg:max-w-4xl lg:grid-cols-[minmax(240px,1fr)_auto] lg:items-center lg:justify-end">
           <SearchBar value={searchTerm} onChange={onSearchChange} />
           <div className="flex w-full min-w-0 flex-wrap items-center gap-2 md:w-auto md:flex-nowrap md:justify-end">
             <CountrySelector
               selectedCountry={selectedCountry}
               onCountryChange={onCountryChange}
             />
-            <ThemeToggle />
+            <div className="hidden lg:block">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </div>

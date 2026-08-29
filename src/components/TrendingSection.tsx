@@ -19,13 +19,18 @@ export function TrendingSection({ statistics, onOpenStatistic }: TrendingSection
   }
 
   return (
-    <section className="rounded-lg border border-border bg-card p-2.5 text-card-foreground shadow-subtle">
-      <div className="mb-2.5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Flame className="h-4 w-4 text-primary" aria-hidden="true" />
-          <h2 className="text-sm font-semibold">Notable shifts</h2>
+    <section className="rounded-2xl border border-border bg-card p-4 text-card-foreground shadow-subtle sm:p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Flame className="h-4 w-4" aria-hidden="true" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold tracking-tight">Notable shifts</h2>
+            <p className="text-xs text-muted-foreground">Largest historical movements</p>
+          </div>
         </div>
-        <span className="text-xs text-muted-foreground">largest historical moves</span>
+        <span className="hidden text-xs text-muted-foreground sm:inline">Compared with past estimates</span>
       </div>
       <div className={getBalancedGridClass(statistics.length, "gap-2")}>
         {statistics.map((statistic) => {
@@ -38,7 +43,7 @@ export function TrendingSection({ statistics, onOpenStatistic }: TrendingSection
               key={statistic.id}
               type="button"
               onClick={() => onOpenStatistic(statistic)}
-              className={`flex min-w-0 items-center gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-left transition hover:-translate-y-0.5 ${categoryStyle.hover} ${categoryStyle.glow}`}
+              className={`flex min-w-0 items-center gap-3 rounded-xl border border-border bg-background/70 px-3 py-2.5 text-left transition hover:-translate-y-0.5 ${categoryStyle.hover} ${categoryStyle.glow}`}
             >
               <div
                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}

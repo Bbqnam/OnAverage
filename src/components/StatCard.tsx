@@ -59,12 +59,21 @@ export function StatCard({
   return (
     <article
       onClick={() => onOpen(statistic)}
-      className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-lg border-y border-r bg-card text-card-foreground transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${categoryStyle.leftBorder} ${
-        isHighlighted ? "ring-2 ring-primary/30" : ""
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen(statistic);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open details for ${statistic.title}`}
+      className={`group relative flex min-h-[158px] cursor-pointer flex-col overflow-hidden rounded-xl border-y border-r bg-card/90 text-card-foreground shadow-subtle transition duration-200 hover:-translate-y-1 hover:border-y-primary/20 hover:border-r-primary/20 hover:shadow-panel focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${categoryStyle.leftBorder} ${
+        isHighlighted ? "ring-2 ring-primary/40" : ""
       } ${cumulative.isUnavailable ? "opacity-40 grayscale" : ""}`}
     >
       {onToggleFavorite && (
-        <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1">
+        <div className="absolute right-2.5 top-2.5 z-10 flex items-center gap-1">
           <button
             type="button"
             onClick={(e) => {
@@ -73,10 +82,10 @@ export function StatCard({
             }}
             aria-label={isFavorite ? "Remove from My World" : "Save to My World"}
             title={isFavorite ? "Remove from My World" : "Save to My World"}
-            className={`rounded-full border p-0.5 transition ${
+            className={`rounded-lg border p-1.5 transition ${
               isFavorite
                 ? "border-amber-400/30 bg-amber-400/10 text-amber-500 opacity-100"
-                : "border-transparent bg-background/80 text-muted-foreground opacity-0 shadow-sm hover:text-foreground group-hover:opacity-100"
+                : "border-border/70 bg-background/80 text-muted-foreground opacity-100 shadow-sm hover:text-foreground sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100"
             }`}
           >
             <Star className="h-3.5 w-3.5" fill={isFavorite ? "currentColor" : "none"} />
@@ -84,12 +93,12 @@ export function StatCard({
         </div>
       )}
 
-      <div className="flex min-w-0 gap-2.5 p-2.5">
-        <div className={`relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${categoryStyle.iconBg} ${categoryStyle.text}`}>
+      <div className="flex min-w-0 gap-3 p-4">
+        <div className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${categoryStyle.iconBg} ${categoryStyle.text}`}>
           {(statistic.category === "Life" || statistic.category === "Events" || statistic.category === "Environment") && (
-            <span className={`absolute h-8 w-8 rounded-full ${categoryStyle.dot} opacity-20 ${categoryStyle.pulse}`} />
+            <span className={`absolute h-9 w-9 rounded-xl ${categoryStyle.dot} opacity-15 ${categoryStyle.pulse}`} />
           )}
-          <StatIcon name={statistic.icon} className="relative z-10 h-3.5 w-3.5" />
+          <StatIcon name={statistic.icon} className="relative z-10 h-[18px] w-[18px]" />
         </div>
         <div className="min-w-0 flex-1 pr-8">
           <div className="flex min-w-0 items-start justify-between gap-2">
@@ -99,18 +108,18 @@ export function StatCard({
                   {statistic.category}
                 </p>
               )}
-              <h2 className="mt-0.5 truncate text-sm font-bold leading-tight text-foreground transition-colors group-hover:text-primary">
+              <h2 className="mt-1 truncate text-sm font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
                 {cleanDisplayText(statistic.title)}
               </h2>
-              <p className="truncate text-[11px] text-muted-foreground">
+              <p className="mt-1 truncate text-xs text-muted-foreground">
                 {cleanDisplayText(statistic.shortDescription)}
               </p>
             </div>
           </div>
 
-          <div className="mt-1.5 flex items-end justify-between gap-2">
+          <div className="mt-3 flex items-end justify-between gap-2">
             <div className="min-w-0">
-              <p className="text-2xl font-bold leading-none tracking-tight text-foreground">
+              <p className="text-[1.7rem] font-semibold tabular-nums leading-none tracking-[-0.035em] text-foreground">
                 {cumulative.isUnavailable
                   ? "Not available"
                   : formatLargeNumber(cumulative.value, cumulative.value >= 100_000)}

@@ -48,8 +48,8 @@ export default {
         ],
       },
       boxShadow: {
-        subtle: "0 1px 2px hsl(var(--foreground) / 0.05)",
-        panel: "0 16px 40px hsl(var(--foreground) / 0.08)",
+        subtle: "0 1px 2px hsl(224 40% 2% / 0.1), 0 6px 18px -14px hsl(224 40% 2% / 0.3)",
+        panel: "0 24px 70px -32px hsl(224 50% 2% / 0.65)",
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -106,14 +106,14 @@ export function LastHourNarrative({ statistics }: LastHourNarrativeProps) {
   }, [statistics]);
 
   return (
-    <div className="w-full max-w-full overflow-hidden rounded-lg border border-border bg-card p-2.5 shadow-subtle">
+    <section className="w-full max-w-full overflow-hidden rounded-2xl border border-border bg-card p-4 shadow-subtle sm:p-5">
       {/* Header */}
-      <div className="mb-2 flex items-center gap-2.5 px-0.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-base">
+      <div className="mb-4 flex items-center gap-3 px-0.5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-lg">
           ⏱️
         </div>
         <div className="min-w-0">
-          <h2 className="text-sm font-semibold leading-tight text-foreground">
+          <h2 className="text-base font-semibold tracking-tight text-foreground">
             What happened in the last hour?
           </h2>
           <p className="text-xs leading-tight text-muted-foreground">
@@ -123,7 +123,7 @@ export function LastHourNarrative({ statistics }: LastHourNarrativeProps) {
       </div>
 
       {/* Card grid */}
-      <div className="grid w-full grid-cols-2 gap-1.5 lg:grid-cols-4">
+      <div className="grid w-full grid-cols-2 gap-2.5 lg:grid-cols-4">
         {cards.map((card) => {
           const val = card.value;
           const formatted = formatLargeNumber(val, val >= 10_000);
@@ -131,15 +131,15 @@ export function LastHourNarrative({ statistics }: LastHourNarrativeProps) {
           return (
             <div
               key={card.id}
-              className="flex min-w-0 items-center gap-2 rounded-md border border-border/80 bg-background/50 px-2 py-1.5 transition-colors hover:bg-accent/30"
+              className="flex min-w-0 items-center gap-3 rounded-xl border border-border/80 bg-background/50 px-3 py-3 transition hover:-translate-y-0.5 hover:border-primary/20 hover:bg-accent/30"
             >
               <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm leading-none ${card.iconBg}`}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-base leading-none ${card.iconBg}`}
               >
                 {card.emoji}
               </span>
               <div className="min-w-0">
-                <p className={`text-base font-bold tabular-nums leading-none ${card.numberColor}`}>
+                <p className={`text-lg font-semibold tabular-nums leading-none tracking-tight ${card.numberColor}`}>
                   {formatted}
                 </p>
                 <p className="mt-0.5 truncate text-[11px] font-semibold leading-tight text-foreground sm:text-xs">
@@ -155,11 +155,11 @@ export function LastHourNarrative({ statistics }: LastHourNarrativeProps) {
       </div>
 
       {/* Footer note */}
-      <div className="mt-2 px-0.5">
+      <div className="mt-3 px-0.5">
         <p className="truncate text-[10px] leading-tight text-muted-foreground/60">
           All figures derived from average annual estimates. Numbers reset every hour.
         </p>
       </div>
-    </div>
+    </section>
   );
 }
